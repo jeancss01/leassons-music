@@ -1,0 +1,78 @@
+<mat-card class="schedules-card">
+  <mat-card-header>
+    <div class="header-row">
+      <div>
+        <mat-card-title>Horário semanal</mat-card-title>
+        <mat-card-subtitle>Inclui horários ativos e histórico</mat-card-subtitle>
+      </div>
+      <a
+        mat-flat-button
+        color="primary"
+        [routerLink]="['/students', studentId(), 'schedule', 'new']"
+      >
+        <mat-icon>add</mat-icon>
+        Novo horário
+      </a>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (loading()) {
+      <div class="state" role="status">
+        <mat-progress-spinner diameter="36" mode="indeterminate" />
+        <span>Carregando horários…</span>
+      </div>
+    } @else if (error(); as message) {
+      <div class="state error" role="alert">
+        <p>{{ message }}</p>
+        <button mat-stroked-button type="button" (click)="load()">Tentar novamente</button>
+      </div>
+    } @else if (schedules().length === 0) {
+      <div class="state empty">
+        <p>Nenhum horário cadastrado para este aluno.</p>
+        <a mat-stroked-button [routerLink]="['/students', studentId(), 'schedule', 'new']">
+          Cadastrar horário
+        </a>
+      </div>
+    } @else {
+      <div class="schedule-list" role="list">
+        @for (schedule of schedules(); track schedule.id) {
+          <article
+            class="schedule-item"
+            role="listitem"
+            [class.historical]="!schedule.active"
+          >
+            <div class="schedule-main">
+              <div class="title-row">
+                <strong>{{ weekdayLabels[schedule.weekday] }}</strong>
+                <span
+                  class="status-chip"
+                  [class.inactive]="!schedule.active"
+                >
+                  {{ schedule.active ? 'Ativo' : 'Histórico' }}
+                </span>
+              </div>
+              <p class="time-line">
+                {{ formatTime(schedule.startTime) }} · {{ schedule.durationMinutes }} min
+              </p>
+              <p class="validity">
+                De {{ schedule.validFrom | date: 'dd/MM/yyyy' }}
+                @if (schedule.validUntil) {
+                  até {{ schedule.validUntil | date: 'dd/MM/yyyy' }}
+                } @else {
+                  · sem data final
+                }
+              </p>
+            </div>
+            <a
+              mat-stroked-button
+              [routerLink]="['/students', studentId(), 'schedule', schedule.id, 'edit']"
+            >
+              Editar
+            </a>
+          </article>
+        }
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

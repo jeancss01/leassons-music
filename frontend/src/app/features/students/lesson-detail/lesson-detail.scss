@@ -1,0 +1,216 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.state.error {
+  color: var(--mat-sys-error);
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  margin: 0.35rem 0 0.25rem;
+  font: var(--mat-sys-headline-small);
+}
+
+.meta-line {
+  margin: 0 0 0.55rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 12%, transparent);
+  font: var(--mat-sys-body-medium);
+}
+
+.detail-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.facts {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-medium);
+}
+
+.facts dd {
+  margin: 0.2rem 0 0;
+}
+
+.diary-card {
+  border: 1px solid color-mix(in srgb, var(--mat-sys-primary) 18%, var(--mat-sys-outline-variant));
+}
+
+.diary-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.diary-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1.75rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.diary-empty mat-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+  opacity: 0.7;
+}
+
+.diary-empty p {
+  margin: 0;
+}
+
+.diary-read {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.diary-read h3 {
+  margin: 0 0 0.35rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+}
+
+.diary-read p {
+  margin: 0;
+}
+
+.multiline {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.diary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.diary-form mat-form-field {
+  width: 100%;
+}
+
+.form-error {
+  margin: 0.25rem 0 0.5rem;
+  color: var(--mat-sys-error);
+}
+
+.diary-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.diary-actions button {
+  width: 100%;
+}
+
+.diary-actions mat-progress-spinner {
+  display: inline-block;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+.status-chip,
+.type-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font: var(--mat-sys-label-medium);
+}
+
+.status-chip[data-status='SCHEDULED'] {
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 16%, transparent);
+  color: var(--mat-sys-tertiary);
+}
+
+.status-chip[data-status='COMPLETED'] {
+  background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+  color: var(--mat-sys-primary);
+}
+
+.status-chip[data-status='NO_SHOW'] {
+  background: color-mix(in srgb, var(--mat-sys-error) 16%, transparent);
+  color: var(--mat-sys-error);
+}
+
+.status-chip[data-status='CANCELLED'] {
+  background: color-mix(in srgb, var(--mat-sys-on-surface-variant) 16%, transparent);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.type-chip {
+  background: color-mix(in srgb, var(--mat-sys-on-surface-variant) 10%, transparent);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (min-width: 720px) {
+  .diary-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .diary-actions button {
+    width: auto;
+  }
+}
+
+@media (min-width: 900px) {
+  .detail-stack {
+    grid-template-columns: minmax(16rem, 0.9fr) minmax(0, 1.3fr);
+    align-items: start;
+  }
+
+  .facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}

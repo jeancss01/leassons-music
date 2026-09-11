@@ -1,0 +1,28 @@
+---
+alwaysApply: true
+---
+# Angular Guidelines
+
+Use Angular 21.
+
+Prefer:
+- standalone components
+- signals
+- computed()
+- signal-based state
+- new Angular control flow
+- inject()
+- typed reactive forms where appropriate
+- Angular Material 3
+
+Avoid:
+- NgModules
+- unnecessary RxJS state management
+- global mutable state
+- unnecessary abstractions
+- premature component libraries
+
+Use feature-based organization.
+
+Components should remain focused.
+Business rules belong in services/domain/backend, not templates.

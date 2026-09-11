@@ -1,0 +1,33 @@
+<mat-card class="login-card">
+  <mat-card-header>
+    <mat-card-title>Violão Diário</mat-card-title>
+    <mat-card-subtitle>Entrar</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Usuário</mat-label>
+        <input matInput formControlName="username" autocomplete="username" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Senha</mat-label>
+        <input
+          matInput
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+        />
+      </mat-form-field>
+
+      @if (errorMessage(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        Entrar
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>

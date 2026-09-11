@@ -1,0 +1,20 @@
+---
+alwaysApply: true
+---
+# Testing
+
+Use Angular's native unit test builder:
+@angular/build:unit-test
+
+Test framework:
+Vitest
+
+Every new business rule must have tests.
+
+Backend:
+- unit tests for business rules
+- integration tests for persistence
+- API tests for important endpoints
+
+Do not write tests only for coverage.
+Tests should validate observable behavior.

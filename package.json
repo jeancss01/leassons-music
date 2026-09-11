@@ -1,0 +1,16 @@
+{
+  "name": "music-daily",
+  "private": true,
+  "packageManager": "yarn@1.22.22",
+  "scripts": {
+    "install:all": "yarn install && yarn --cwd backend install && yarn --cwd frontend install && yarn --cwd backend prisma:generate",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "wait:db": "bash scripts/wait-for-db.sh",
+    "start": "yarn db:up && yarn wait:db && concurrently -k -n api,web -c blue,green \"yarn --cwd backend start:dev\" \"yarn --cwd frontend start\"",
+    "stop": "yarn db:down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

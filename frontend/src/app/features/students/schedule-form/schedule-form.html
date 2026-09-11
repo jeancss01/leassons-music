@@ -1,0 +1,98 @@
+<section class="page-header">
+  <div>
+    <a mat-button [routerLink]="['/students', studentId()]">
+      Voltar ao aluno
+    </a>
+    <h1>{{ isEdit() ? 'Editar horário' : 'Novo horário' }}</h1>
+    <p class="subtitle">
+      Horário semanal recorrente do aluno.
+    </p>
+  </div>
+</section>
+
+@if (isEdit()) {
+  <p class="notice" role="note">
+    Alterações neste horário <strong>não alteram</strong> aulas já registradas.
+  </p>
+}
+
+@if (loading()) {
+  <div class="state" role="status">
+    <mat-progress-spinner diameter="40" mode="indeterminate" />
+    <span>Carregando…</span>
+  </div>
+} @else if (error() && isEdit() && form.pristine) {
+  <div class="state error" role="alert">
+    <p>{{ error() }}</p>
+    <a mat-stroked-button [routerLink]="['/students', studentId()]">Voltar ao aluno</a>
+  </div>
+} @else {
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Dia da semana</mat-label>
+      <mat-select formControlName="weekday">
+        @for (day of weekdays; track day) {
+          <mat-option [value]="day">{{ weekdayLabels[day] }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.weekday.hasError('required')) {
+        <mat-error>Dia da semana é obrigatório.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>Horário</mat-label>
+        <input matInput type="time" formControlName="startTime" />
+        @if (form.controls.startTime.hasError('required')) {
+          <mat-error>Horário é obrigatório.</mat-error>
+        }
+        @if (form.controls.startTime.hasError('pattern')) {
+          <mat-error>Informe um horário válido.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Duração (minutos)</mat-label>
+        <input matInput type="number" formControlName="durationMinutes" min="1" step="1" />
+        @if (form.controls.durationMinutes.hasError('required')) {
+          <mat-error>Duração é obrigatória.</mat-error>
+        }
+        @if (form.controls.durationMinutes.hasError('min')) {
+          <mat-error>Duração deve ser maior que zero.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>Válido a partir de</mat-label>
+        <input matInput type="date" formControlName="validFrom" />
+        @if (form.controls.validFrom.hasError('required')) {
+          <mat-error>Data inicial é obrigatória.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Válido até (opcional)</mat-label>
+        <input matInput type="date" formControlName="validUntil" />
+        @if (form.hasError('validUntilBeforeFrom')) {
+          <mat-error>A data final deve ser igual ou posterior à inicial.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-checkbox formControlName="active">Horário ativo</mat-checkbox>
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="actions">
+      <a mat-button [routerLink]="['/students', studentId()]">Cancelar</a>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Salvando…' : 'Salvar' }}
+      </button>
+    </div>
+  </form>
+}

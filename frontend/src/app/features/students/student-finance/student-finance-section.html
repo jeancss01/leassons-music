@@ -1,0 +1,112 @@
+<mat-card class="finance-card">
+  <mat-card-header>
+    <div class="header-row">
+      <div>
+        <mat-card-title>Financeiro</mat-card-title>
+        <mat-card-subtitle>
+          Mensalidade atual:
+          {{ monthlyFee() | currency: 'BRL' : 'symbol' : '1.2-2' }}
+          · cobranças com valor congelado na geração
+        </mat-card-subtitle>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="openCreate()" [disabled]="!!actionInFlight()">
+          <mat-icon>add</mat-icon>
+          Nova cobrança
+        </button>
+      </div>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="generate-row">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Mês para gerar</mat-label>
+        <input matInput type="month" [ngModel]="generateMonth()" (ngModelChange)="generateMonth.set($event)" />
+      </mat-form-field>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="generating()"
+        (click)="generate()"
+      >
+        {{ generating() ? 'Gerando…' : 'Gerar mensalidade' }}
+      </button>
+      <p class="generate-hint">
+        A geração usa a API global (todos os alunos ACTIVE). A lista abaixo é só deste aluno.
+      </p>
+    </div>
+
+    @if (loading()) {
+      <div class="state" role="status">
+        <mat-progress-spinner diameter="36" mode="indeterminate" />
+        <span>Carregando mensalidades…</span>
+      </div>
+    } @else if (error(); as message) {
+      <div class="state error" role="alert">
+        <p>{{ message }}</p>
+        <button mat-stroked-button type="button" (click)="load()">Tentar novamente</button>
+      </div>
+    } @else if (charges().length === 0) {
+      <div class="state empty">
+        <p>Nenhuma cobrança registrada para este aluno.</p>
+        <button mat-stroked-button type="button" (click)="openCreate()">Criar cobrança</button>
+      </div>
+    } @else {
+      <div class="charge-list" role="list">
+        @for (charge of charges(); track charge.id) {
+          <article class="charge-item" role="listitem" [attr.data-status]="charge.status">
+            <div class="charge-main">
+              <div class="title-row">
+                <strong>{{ formatMonth(charge.referenceMonth) }}</strong>
+                <span class="status-chip" [attr.data-status]="charge.status">
+                  {{ statusLabels[charge.status] }}
+                </span>
+              </div>
+              <p class="amount">
+                {{ charge.amount | currency: 'BRL' : 'symbol' : '1.2-2' }}
+              </p>
+              <p class="meta">
+                @if (charge.dueDate) {
+                  Vencimento: {{ charge.dueDate | date: 'dd/MM/yyyy' }}
+                } @else {
+                  Sem vencimento
+                }
+                @if (charge.status === 'PAID' && charge.paidAt) {
+                  · Pago em {{ charge.paidAt | date: 'dd/MM/yyyy HH:mm' }}
+                }
+              </p>
+              @if (charge.notes) {
+                <p class="notes">{{ charge.notes }}</p>
+              }
+            </div>
+
+            <button
+              mat-icon-button
+              type="button"
+              [matMenuTriggerFor]="actionsMenu"
+              aria-label="Ações da cobrança"
+              [disabled]="actionInFlight() === charge.id"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #actionsMenu="matMenu">
+              @if (charge.status === 'PENDING') {
+                <button mat-menu-item type="button" (click)="pay(charge)">Marcar como paga</button>
+              }
+              @if (charge.status === 'PAID') {
+                <button mat-menu-item type="button" (click)="unpay(charge)">
+                  Desfazer pagamento
+                </button>
+              }
+              @if (charge.status !== 'CANCELLED') {
+                <button mat-menu-item type="button" (click)="edit(charge)">Editar</button>
+              }
+            </mat-menu>
+          </article>
+        }
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

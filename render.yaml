@@ -1,0 +1,30 @@
+# Render Blueprint — free MVP API (Neon Postgres + this web service).
+# Docs: docs/deploy-free.md
+#
+# After first deploy, set secret env vars in the Render dashboard
+# (DATABASE_URL, AUTH_*, JWT_SECRET) — they are marked sync: false below.
+
+services:
+  - type: web
+    name: violao-diario-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: yarn install --frozen-lockfile && yarn prisma generate && yarn build
+    startCommand: yarn prisma:migrate:deploy && yarn start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_USERNAME
+        sync: false
+      - key: AUTH_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false

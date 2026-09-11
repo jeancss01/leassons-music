@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("student_status")
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+
+  @@map("weekday")
+}
+
+enum LessonType {
+  REGULAR
+  MAKEUP
+  ONE_OFF
+
+  @@map("lesson_type")
+}
+
+enum LessonStatus {
+  SCHEDULED
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+
+  @@map("lesson_status")
+}
+
+enum CancellationReason {
+  HOLIDAY
+  VACATION
+  TEACHER_CANCELLED
+  STUDENT_CANCELLED
+  OTHER
+
+  @@map("cancellation_reason")
+}
+
+enum MonthlyChargeStatus {
+  PENDING
+  PAID
+  CANCELLED
+
+  @@map("monthly_charge_status")
+}
+
+model Student {
+  id         String        @id @default(uuid()) @db.Uuid
+  name       String
+  email      String?
+  phone      String?
+  startDate  DateTime      @map("start_date") @db.Date
+  monthlyFee Decimal       @map("monthly_fee") @db.Decimal(12, 2)
+  status     StudentStatus @default(ACTIVE)
+  notes      String?
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  schedules      Schedule[]
+  lessons        Lesson[]
+  monthlyCharges MonthlyCharge[]
+
+  @@index([status], map: "students_status_idx")
+  @@index([name], map: "students_name_idx")
+  @@map("students")
+}
+
+model Schedule {
+  id               String   @id @default(uuid()) @db.Uuid
+  studentId        String   @map("student_id") @db.Uuid
+  weekday          Weekday
+  startTime        DateTime @map("start_time") @db.Time(0)
+  durationMinutes  Int      @map("duration_minutes")
+  validFrom        DateTime @map("valid_from") @db.Date
+  validUntil       DateTime? @map("valid_until") @db.Date
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  student Student  @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  lessons Lesson[]
+
+  @@index([studentId], map: "schedules_student_id_idx")
+  @@index([studentId, active], map: "schedules_student_active_idx")
+  @@map("schedules")
+}
+
+model Lesson {
+  id                  String              @id @default(uuid()) @db.Uuid
+  studentId           String              @map("student_id") @db.Uuid
+  scheduleId          String?             @map("schedule_id") @db.Uuid
+  date                DateTime            @db.Date
+  startTime           DateTime            @map("start_time") @db.Time(0)
+  durationMinutes     Int                 @map("duration_minutes")
+  type                LessonType
+  status              LessonStatus
+  cancellationReason  CancellationReason? @map("cancellation_reason")
+  content             String?
+  exercises           String?
+  observations        String?
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  student    Student     @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  schedule   Schedule?   @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
+  lessonTags LessonTag[]
+
+  @@index([studentId], map: "lessons_student_id_idx")
+  @@index([scheduleId], map: "lessons_schedule_id_idx")
+  @@index([studentId, date], map: "lessons_student_date_idx")
+  @@index([status], map: "lessons_status_idx")
+  @@index([type], map: "lessons_type_idx")
+  @@map("lessons")
+}
+
+model Tag {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique(map: "tags_name_unique")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lessonTags LessonTag[]
+
+  @@map("tags")
+}
+
+model LessonTag {
+  lessonId String @map("lesson_id") @db.Uuid
+  tagId    String @map("tag_id") @db.Uuid
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@id([lessonId, tagId])
+  @@index([tagId], map: "lesson_tags_tag_id_idx")
+  @@map("lesson_tags")
+}
+
+model MonthlyCharge {
+  id             String              @id @default(uuid()) @db.Uuid
+  studentId      String              @map("student_id") @db.Uuid
+  referenceMonth String              @map("reference_month") @db.Char(7)
+  amount         Decimal             @db.Decimal(12, 2)
+  dueDate        DateTime?           @map("due_date") @db.Date
+  status         MonthlyChargeStatus @default(PENDING)
+  paidAt         DateTime?           @map("paid_at") @db.Timestamptz(6)
+  notes          String?
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, referenceMonth], map: "monthly_charges_student_month_unique")
+  @@index([studentId], map: "monthly_charges_student_id_idx")
+  @@index([status], map: "monthly_charges_status_idx")
+  @@index([referenceMonth], map: "monthly_charges_reference_month_idx")
+  @@map("monthly_charges")
+}

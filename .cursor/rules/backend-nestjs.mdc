@@ -1,0 +1,24 @@
+---
+alwaysApply: true
+---
+# NestJS Backend Guidelines
+
+Use NestJS with Prisma and PostgreSQL.
+
+Prefer:
+- one module per feature
+- DTOs with class-validator
+- explicit controllers and services
+- database constraints in Prisma schema
+- OpenAPI decorators on endpoints and DTOs
+
+Avoid:
+- repositories over Prisma without need
+- CQRS / event sourcing
+- microservices patterns
+- unnecessary shared "core" layers
+
+Auth in v1 is single-user JWT (see docs/decisions/001-single-user-auth.md).
+
+Protect domain endpoints with JwtAuthGuard.
+Keep /health and /auth/login public.

@@ -1,0 +1,126 @@
+.header-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.generate-row {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.generate-hint {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.state.error {
+  color: var(--mat-sys-error);
+}
+
+.charge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.charge-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.9rem 0.75rem 0.9rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.charge-item[data-status='PAID'] {
+  border-color: color-mix(in srgb, var(--mat-sys-primary) 35%, var(--mat-sys-outline-variant));
+}
+
+.charge-item[data-status='CANCELLED'] {
+  border-style: dashed;
+  opacity: 0.9;
+}
+
+.charge-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.amount {
+  margin: 0.35rem 0 0.15rem;
+  font: var(--mat-sys-title-medium);
+}
+
+.meta,
+.notes {
+  margin: 0.2rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font: var(--mat-sys-label-medium);
+}
+
+.status-chip[data-status='PENDING'] {
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 16%, transparent);
+  color: var(--mat-sys-tertiary);
+}
+
+.status-chip[data-status='PAID'] {
+  background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+  color: var(--mat-sys-primary);
+}
+
+.status-chip[data-status='CANCELLED'] {
+  background: color-mix(in srgb, var(--mat-sys-on-surface-variant) 16%, transparent);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (min-width: 720px) {
+  .generate-row {
+    grid-template-columns: minmax(10rem, 14rem) auto;
+    align-items: center;
+  }
+
+  .generate-hint {
+    grid-column: 1 / -1;
+  }
+}

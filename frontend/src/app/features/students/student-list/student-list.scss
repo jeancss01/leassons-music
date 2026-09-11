@@ -1,0 +1,124 @@
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.toolbar-row {
+  margin-bottom: 1rem;
+  max-width: 14rem;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.state.error {
+  color: var(--mat-sys-error);
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.list-header {
+  display: none;
+}
+
+.student-row {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.name-link {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.name-link:hover {
+  text-decoration: underline;
+}
+
+.mobile-meta,
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.cell.name,
+.cell.contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.cell.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-label-medium);
+}
+
+.status-chip.inactive {
+  background: color-mix(in srgb, var(--mat-sys-on-surface-variant) 16%, transparent);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (min-width: 900px) {
+  .list-header,
+  .student-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1.4fr 0.8fr 0.7fr auto;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .list-header {
+    padding: 0 1rem;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-large);
+  }
+
+  .student-row {
+    padding: 0.75rem 1rem;
+  }
+
+  .mobile-meta {
+    display: none;
+  }
+}

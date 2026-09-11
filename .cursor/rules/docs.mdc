@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+---
+# Documentation Guidelines
+
+Canonical sources:
+- docs/domain.md — domain model
+- docs/business-rules.md — business rules
+- docs/architecture.md — project structure
+- docs/api.md — API / OpenAPI
+- docs/decisions/ — short ADRs for infra/product choices
+
+Do not invent business rules.
+If an implementation needs an undocumented business decision, stop and present alternatives.
+
+Update docs when structure, API contracts, or accepted decisions change.
+Keep ADRs short and concrete.

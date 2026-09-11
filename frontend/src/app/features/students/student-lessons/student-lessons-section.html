@@ -1,0 +1,65 @@
+<mat-card class="lessons-card">
+  <mat-card-header>
+    <div class="header-row">
+      <div>
+        <mat-card-title>Aulas</mat-card-title>
+        <mat-card-subtitle>Histórico completo, incluindo faltas e cancelamentos</mat-card-subtitle>
+      </div>
+      <a mat-flat-button color="primary" [routerLink]="['/students', studentId(), 'lesson', 'new']">
+        <mat-icon>add</mat-icon>
+        Nova aula
+      </a>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (loading()) {
+      <div class="state" role="status">
+        <mat-progress-spinner diameter="36" mode="indeterminate" />
+        <span>Carregando aulas…</span>
+      </div>
+    } @else if (error(); as message) {
+      <div class="state error" role="alert">
+        <p>{{ message }}</p>
+        <button mat-stroked-button type="button" (click)="load()">Tentar novamente</button>
+      </div>
+    } @else if (lessons().length === 0) {
+      <div class="state empty">
+        <p>Nenhuma aula registrada para este aluno.</p>
+        <a mat-stroked-button [routerLink]="['/students', studentId(), 'lesson', 'new']">
+          Registrar aula
+        </a>
+      </div>
+    } @else {
+      <div class="lesson-list" role="list">
+        @for (lesson of lessons(); track lesson.id) {
+          <article class="lesson-item" role="listitem" [attr.data-status]="lesson.status">
+            <div class="lesson-main">
+              <div class="title-row">
+                <strong>{{ lesson.date | date: 'dd/MM/yyyy' }}</strong>
+                <span class="status-chip" [attr.data-status]="lesson.status">
+                  {{ statusLabels[lesson.status] }}
+                </span>
+                <span class="type-chip">{{ typeLabels[lesson.type] }}</span>
+              </div>
+              <p class="time-line">
+                {{ formatTime(lesson.startTime) }} · {{ lesson.durationMinutes }} min
+              </p>
+              @if (lesson.status === 'CANCELLED' && lesson.cancellationReason) {
+                <p class="cancel-reason">
+                  Motivo: {{ reasonLabels[lesson.cancellationReason] }}
+                </p>
+              }
+            </div>
+            <a
+              mat-stroked-button
+              [routerLink]="['/students', studentId(), 'lesson', lesson.id]"
+            >
+              Abrir
+            </a>
+          </article>
+        }
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,218 @@
+<section class="page-header">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="subtitle">Painel operacional do dia.</p>
+  </div>
+  <div class="header-actions">
+    <a mat-stroked-button routerLink="/students">Ver alunos</a>
+    <a mat-flat-button color="primary" routerLink="/students/new">
+      <mat-icon>person_add</mat-icon>
+      Novo aluno
+    </a>
+  </div>
+</section>
+
+<section class="summary-grid" aria-label="Resumo">
+  <a class="summary-card" routerLink="/students">
+    <span class="summary-label">Alunos ativos</span>
+    @if (studentsState().loading) {
+      <mat-progress-spinner diameter="28" mode="indeterminate" />
+    } @else if (studentsState().error) {
+      <span class="summary-error">Erro</span>
+    } @else {
+      <span class="summary-value">{{ activeStudentsCount() }}</span>
+    }
+  </a>
+
+  <div class="summary-card">
+    <span class="summary-label">Aulas hoje</span>
+    @if (lessonsState().loading) {
+      <mat-progress-spinner diameter="28" mode="indeterminate" />
+    } @else if (lessonsState().error) {
+      <span class="summary-error">Erro</span>
+    } @else {
+      <span class="summary-value">{{ todayLessons().length }}</span>
+    }
+  </div>
+
+  <div class="summary-card">
+    <span class="summary-label">Mensalidades pendentes</span>
+    @if (pendingChargesState().loading) {
+      <mat-progress-spinner diameter="28" mode="indeterminate" />
+    } @else if (pendingChargesState().error) {
+      <span class="summary-error">Erro</span>
+    } @else {
+      <span class="summary-value">{{ pendingCharges().length }}</span>
+    }
+  </div>
+
+  <div class="summary-card">
+    <span class="summary-label">Valor pendente</span>
+    @if (pendingChargesState().loading) {
+      <mat-progress-spinner diameter="28" mode="indeterminate" />
+    } @else if (pendingChargesState().error) {
+      <span class="summary-error">Erro</span>
+    } @else {
+      <span class="summary-value money">
+        {{ pendingAmount() | currency: 'BRL' : 'symbol' : '1.2-2' }}
+      </span>
+    }
+  </div>
+
+  <div class="summary-card">
+    <span class="summary-label">Recebido no mês</span>
+    @if (paidChargesState().loading) {
+      <mat-progress-spinner diameter="28" mode="indeterminate" />
+    } @else if (paidChargesState().error) {
+      <span class="summary-error">Erro</span>
+    } @else {
+      <span class="summary-value money">
+        {{ receivedThisMonth() | currency: 'BRL' : 'symbol' : '1.2-2' }}
+      </span>
+    }
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <h2>Aulas de hoje</h2>
+    <span class="panel-date">{{ todayIso | date: 'dd/MM/yyyy' }}</span>
+  </div>
+
+  @if (lessonsState().loading) {
+    <div class="state" role="status">
+      <mat-progress-spinner diameter="36" mode="indeterminate" />
+      <span>Carregando aulas…</span>
+    </div>
+  } @else if (lessonsState().error; as message) {
+    <div class="state error" role="alert">
+      <p>{{ message }}</p>
+      <button mat-stroked-button type="button" (click)="loadLessons()">Tentar novamente</button>
+    </div>
+  } @else if (todayLessons().length === 0) {
+    <div class="state empty">
+      <p>Você não tem aulas hoje.</p>
+    </div>
+  } @else {
+    <div class="item-list" role="list">
+      @for (lesson of todayLessons(); track lesson.id) {
+        <a
+          class="item-card"
+          role="listitem"
+          [attr.data-status]="lesson.status"
+          [routerLink]="['/students', lesson.studentId, 'lesson', lesson.id]"
+        >
+          <div class="item-time">{{ formatTime(lesson.startTime) }}</div>
+          <div class="item-body">
+            <strong>{{ studentName(lesson.studentId) }}</strong>
+            <p>
+              {{ lesson.durationMinutes }} min · {{ typeLabels[lesson.type] }}
+            </p>
+          </div>
+          <span class="status-chip" [attr.data-status]="lesson.status">
+            {{ statusLabels[lesson.status] }}
+          </span>
+        </a>
+      }
+    </div>
+  }
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <h2>Próximas aulas</h2>
+  </div>
+
+  @if (lessonsState().loading) {
+    <div class="state" role="status">
+      <mat-progress-spinner diameter="36" mode="indeterminate" />
+      <span>Carregando…</span>
+    </div>
+  } @else if (lessonsState().error; as message) {
+    <div class="state error" role="alert">
+      <p>{{ message }}</p>
+      <button mat-stroked-button type="button" (click)="loadLessons()">Tentar novamente</button>
+    </div>
+  } @else if (upcomingLessons().length === 0) {
+    <div class="state empty">
+      <p>Não há próximas aulas registradas.</p>
+    </div>
+  } @else {
+    <div class="item-list" role="list">
+      @for (lesson of upcomingLessons(); track lesson.id) {
+        <a
+          class="item-card"
+          role="listitem"
+          [attr.data-status]="lesson.status"
+          [routerLink]="['/students', lesson.studentId, 'lesson', lesson.id]"
+        >
+          <div class="item-time multi">
+            <span>{{ lesson.date | date: 'dd/MM' }}</span>
+            <span>{{ formatTime(lesson.startTime) }}</span>
+          </div>
+          <div class="item-body">
+            <strong>{{ studentName(lesson.studentId) }}</strong>
+            <p>
+              {{ lesson.durationMinutes }} min · {{ typeLabels[lesson.type] }}
+            </p>
+          </div>
+          <span class="status-chip" [attr.data-status]="lesson.status">
+            {{ statusLabels[lesson.status] }}
+          </span>
+        </a>
+      }
+    </div>
+  }
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <h2>Mensalidades pendentes</h2>
+  </div>
+
+  @if (pendingChargesState().loading) {
+    <div class="state" role="status">
+      <mat-progress-spinner diameter="36" mode="indeterminate" />
+      <span>Carregando…</span>
+    </div>
+  } @else if (pendingChargesState().error; as message) {
+    <div class="state error" role="alert">
+      <p>{{ message }}</p>
+      <button mat-stroked-button type="button" (click)="loadPendingCharges()">
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (pendingCharges().length === 0) {
+    <div class="state empty">
+      <p>Nenhuma mensalidade pendente.</p>
+    </div>
+  } @else {
+    <div class="item-list" role="list">
+      @for (charge of pendingCharges(); track charge.id) {
+        <a
+          class="item-card charge"
+          role="listitem"
+          [routerLink]="['/students', charge.studentId]"
+        >
+          <div class="item-body">
+            <strong>{{ studentName(charge.studentId) }}</strong>
+            <p>
+              {{ formatMonth(charge.referenceMonth) }}
+              @if (charge.dueDate) {
+                · venc. {{ charge.dueDate | date: 'dd/MM/yyyy' }}
+              }
+            </p>
+          </div>
+          <div class="charge-side">
+            <span class="amount">
+              {{ charge.amount | currency: 'BRL' : 'symbol' : '1.2-2' }}
+            </span>
+            <span class="status-chip" data-status="PENDING">
+              {{ chargeStatusLabels[charge.status] }}
+            </span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</section>

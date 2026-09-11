@@ -1,0 +1,212 @@
+@if (loading()) {
+  <div class="state" role="status">
+    <mat-progress-spinner diameter="40" mode="indeterminate" />
+    <span>Carregando aula…</span>
+  </div>
+} @else if (error(); as message) {
+  <div class="state error" role="alert">
+    <p>{{ message }}</p>
+    <a mat-stroked-button [routerLink]="['/students', studentId()]">Voltar ao aluno</a>
+  </div>
+} @else if (lesson(); as lesson) {
+  <section class="page-header">
+    <div>
+      <a mat-button [routerLink]="['/students', studentId()]">
+        <mat-icon>arrow_back</mat-icon>
+        Aluno
+      </a>
+      <h1>Aula de {{ lesson.date | date: 'dd/MM/yyyy' }}</h1>
+      <p class="meta-line">
+        {{ formatTime(lesson.startTime) }} · {{ lesson.durationMinutes }} min ·
+        {{ typeLabels[lesson.type] }}
+      </p>
+      <div class="chips">
+        <span class="status-chip" [attr.data-status]="lesson.status">
+          {{ statusLabels[lesson.status] }}
+        </span>
+        <span class="type-chip">{{ typeLabels[lesson.type] }}</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      @if (isScheduled()) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="actionInFlight()"
+          (click)="complete()"
+        >
+          Marcar como concluída
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          [matMenuTriggerFor]="moreActions"
+          aria-label="Mais ações"
+          [disabled]="actionInFlight()"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #moreActions="matMenu">
+          <button mat-menu-item type="button" (click)="noShow()">Marcar como falta</button>
+          <button mat-menu-item type="button" (click)="cancel()">Cancelar aula</button>
+          <a mat-menu-item [routerLink]="['/students', studentId(), 'lesson', lesson.id, 'edit']">
+            Editar dados da aula
+          </a>
+        </mat-menu>
+      } @else {
+        <a
+          mat-stroked-button
+          [routerLink]="['/students', studentId(), 'lesson', lesson.id, 'edit']"
+        >
+          <mat-icon>tune</mat-icon>
+          Editar dados
+        </a>
+      }
+    </div>
+  </section>
+
+  @if (isScheduled()) {
+    <p class="notice" role="note">
+      Cancelar a aula <strong>não cria reposição</strong> automaticamente.
+    </p>
+  }
+
+  <div class="detail-stack">
+    <mat-card class="facts-card">
+      <mat-card-header>
+        <mat-card-title>Dados da aula</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="facts">
+          <div>
+            <dt>Data</dt>
+            <dd>{{ lesson.date | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Horário</dt>
+            <dd>{{ formatTime(lesson.startTime) }}</dd>
+          </div>
+          <div>
+            <dt>Duração</dt>
+            <dd>{{ lesson.durationMinutes }} min</dd>
+          </div>
+          <div>
+            <dt>Tipo</dt>
+            <dd>{{ typeLabels[lesson.type] }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ statusLabels[lesson.status] }}</dd>
+          </div>
+          <div>
+            <dt>Horário semanal</dt>
+            <dd>{{ scheduleLabel() || '—' }}</dd>
+          </div>
+          @if (lesson.status === 'CANCELLED') {
+            <div>
+              <dt>Motivo do cancelamento</dt>
+              <dd>
+                {{
+                  lesson.cancellationReason
+                    ? reasonLabels[lesson.cancellationReason]
+                    : '—'
+                }}
+              </dd>
+            </div>
+          }
+        </dl>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="diary-card">
+      <mat-card-header>
+        <div class="diary-header">
+          <div>
+            <mat-card-title>Diário pedagógico</mat-card-title>
+            <mat-card-subtitle>Registre o que foi trabalhado nesta aula</mat-card-subtitle>
+          </div>
+          @if (!editingDiary()) {
+            <button mat-flat-button color="primary" type="button" (click)="startDiaryEdit()">
+              <mat-icon>edit_note</mat-icon>
+              Editar diário
+            </button>
+          }
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (editingDiary()) {
+          <form class="diary-form" [formGroup]="diaryForm" (ngSubmit)="saveDiary()">
+            <mat-form-field appearance="outline">
+              <mat-label>Conteúdo</mat-label>
+              <textarea matInput rows="4" formControlName="content"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Exercícios</mat-label>
+              <textarea matInput rows="4" formControlName="exercises"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Observações</mat-label>
+              <textarea matInput rows="4" formControlName="observations"></textarea>
+            </mat-form-field>
+
+            @if (diaryError(); as message) {
+              <p class="form-error" role="alert">{{ message }}</p>
+            }
+
+            <div class="diary-actions">
+              <button
+                mat-button
+                type="button"
+                [disabled]="savingDiary()"
+                (click)="cancelDiaryEdit()"
+              >
+                Cancelar
+              </button>
+              <button
+                mat-flat-button
+                color="primary"
+                type="submit"
+                [disabled]="savingDiary()"
+              >
+                @if (savingDiary()) {
+                  <mat-progress-spinner diameter="18" mode="indeterminate" />
+                  Salvando…
+                } @else {
+                  Salvar diário
+                }
+              </button>
+            </div>
+          </form>
+        } @else if (!hasDiary()) {
+          <div class="diary-empty">
+            <mat-icon>menu_book</mat-icon>
+            <p>Nenhum registro ainda.</p>
+            <button mat-stroked-button type="button" (click)="startDiaryEdit()">
+              Editar diário
+            </button>
+          </div>
+        } @else {
+          <div class="diary-read">
+            <section>
+              <h3>Conteúdo</h3>
+              <p class="multiline">{{ lesson.content || '—' }}</p>
+            </section>
+            <section>
+              <h3>Exercícios</h3>
+              <p class="multiline">{{ lesson.exercises || '—' }}</p>
+            </section>
+            <section>
+              <h3>Observações</h3>
+              <p class="multiline">{{ lesson.observations || '—' }}</p>
+            </section>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+}

@@ -1,0 +1,45 @@
+.shell {
+  min-height: 100vh;
+}
+
+.sidenav {
+  width: 15.5rem;
+}
+
+.sidenav-brand {
+  padding: 1.1rem 1rem 0.75rem;
+  font: var(--mat-sys-title-medium);
+}
+
+.active-link {
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.toolbar-title {
+  margin-left: 0.25rem;
+  font-weight: 500;
+  color: inherit;
+  text-decoration: none;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.content {
+  padding: 1rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 800px) {
+  .content {
+    padding: 1.5rem;
+  }
+}

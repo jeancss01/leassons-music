@@ -1,0 +1,116 @@
+<section class="page-header">
+  <div>
+    <h1>Alunos</h1>
+    <p class="subtitle">Gerencie o cadastro de alunos.</p>
+  </div>
+  <a mat-flat-button color="primary" routerLink="/students/new">
+    <mat-icon>person_add</mat-icon>
+    Novo aluno
+  </a>
+</section>
+
+<div class="toolbar-row">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Status</mat-label>
+    <mat-select
+      [value]="statusFilter()"
+      (selectionChange)="onStatusFilterChange($event.value)"
+    >
+      <mat-option value="ACTIVE">Ativos</mat-option>
+      <mat-option value="INACTIVE">Inativos</mat-option>
+      <mat-option value="ALL">Todos</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (loading()) {
+  <div class="state" role="status">
+    <mat-progress-spinner diameter="40" mode="indeterminate" />
+    <span>Carregando alunos…</span>
+  </div>
+} @else if (error(); as message) {
+  <div class="state error" role="alert">
+    <p>{{ message }}</p>
+    <button mat-stroked-button type="button" (click)="load()">Tentar novamente</button>
+  </div>
+} @else if (students().length === 0) {
+  <div class="state empty">
+    <p>Nenhum aluno encontrado para este filtro.</p>
+    <a mat-stroked-button routerLink="/students/new">Cadastrar aluno</a>
+  </div>
+} @else {
+  <div class="student-list" role="list">
+    <div class="list-header" aria-hidden="true">
+      <span>Nome</span>
+      <span>Contato</span>
+      <span>Mensalidade</span>
+      <span>Status</span>
+      <span>Ações</span>
+    </div>
+
+    @for (student of students(); track student.id) {
+      <article class="student-row" role="listitem">
+        <div class="cell name">
+          <a [routerLink]="['/students', student.id]" class="name-link">{{ student.name }}</a>
+          <span class="mobile-meta">
+            desde {{ student.startDate | date: 'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+        <div class="cell contact">
+          @if (student.phone || student.email) {
+            @if (student.phone) {
+              <span>{{ student.phone }}</span>
+            }
+            @if (student.email) {
+              <span class="muted">{{ student.email }}</span>
+            }
+          } @else {
+            <span class="muted">—</span>
+          }
+        </div>
+
+        <div class="cell fee">
+          {{ student.monthlyFee | currency: 'BRL' : 'symbol' : '1.2-2' }}
+        </div>
+
+        <div class="cell status">
+          <span class="status-chip" [class.inactive]="student.status === 'INACTIVE'">
+            {{ student.status === 'ACTIVE' ? 'Ativo' : 'Inativo' }}
+          </span>
+        </div>
+
+        <div class="cell actions">
+          <a
+            mat-icon-button
+            [routerLink]="['/students', student.id]"
+            aria-label="Ver detalhes"
+            title="Detalhe"
+          >
+            <mat-icon>visibility</mat-icon>
+          </a>
+          <a
+            mat-icon-button
+            [routerLink]="['/students', student.id, 'edit']"
+            aria-label="Editar aluno"
+            title="Editar"
+          >
+            <mat-icon>edit</mat-icon>
+          </a>
+          @if (student.status === 'ACTIVE') {
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Inativar aluno"
+              title="Inativar"
+              [disabled]="actionInFlight() === student.id"
+              (click)="inactivate(student, $event)"
+            >
+              <mat-icon>person_off</mat-icon>
+            </button>
+          }
+        </div>
+      </article>
+    }
+  </div>
+}

@@ -1,0 +1,28 @@
+:host {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(160deg, #eef3f8 0%, #f7f4ef 100%);
+}
+
+.login-card {
+  width: min(100%, 22rem);
+}
+
+.full-width {
+  width: 100%;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.error {
+  color: var(--mat-sys-error);
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+}
+
+button {
+  width: 100%;
+}

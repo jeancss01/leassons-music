@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+# Project Instructions
+
+This is a personal guitar lesson management application.
+
+The application is intentionally small and pragmatic.
+
+Do not introduce:
+- microservices
+- event buses
+- CQRS
+- message brokers
+- Redis
+- Kubernetes
+- unnecessary abstractions
+- speculative features
+
+Prefer:
+- simple REST APIs
+- PostgreSQL
+- explicit domain rules
+- small services
+- strong database constraints
+- automated tests
+- readable code
+
+Business rules are defined in:
+docs/business-rules.md
+
+The domain model is defined in:
+docs/domain.md
+
+Do not invent business rules.
+If an implementation requires a business decision not documented there,
+stop and explicitly identify the decision.

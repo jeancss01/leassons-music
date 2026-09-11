@@ -1,0 +1,106 @@
+@if (loading()) {
+  <div class="state" role="status">
+    <mat-progress-spinner diameter="40" mode="indeterminate" />
+    <span>Carregando aluno…</span>
+  </div>
+} @else if (error(); as message) {
+  <div class="state error" role="alert">
+    <p>{{ message }}</p>
+    <a mat-stroked-button routerLink="/students">Voltar à lista</a>
+  </div>
+} @else if (student(); as student) {
+  <section class="page-header">
+    <div>
+      <a mat-button routerLink="/students">
+        <mat-icon>arrow_back</mat-icon>
+        Alunos
+      </a>
+      <h1>{{ student.name }}</h1>
+      <span class="status-chip" [class.inactive]="student.status === 'INACTIVE'">
+        {{ student.status === 'ACTIVE' ? 'Ativo' : 'Inativo' }}
+      </span>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button type="button" (click)="edit()">
+        <mat-icon>edit</mat-icon>
+        Editar
+      </button>
+      @if (student.status === 'ACTIVE') {
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          [disabled]="actionInFlight()"
+          (click)="inactivate()"
+        >
+          Inativar
+        </button>
+      } @else {
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="actionInFlight()"
+          (click)="activate()"
+        >
+          Reativar
+        </button>
+      }
+    </div>
+  </section>
+
+  <div class="detail-stack">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Dados do aluno</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="facts">
+          <div>
+            <dt>E-mail</dt>
+            <dd>{{ student.email || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd>{{ student.phone || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Aluno desde</dt>
+            <dd>{{ student.startDate | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Mensalidade</dt>
+            <dd>{{ student.monthlyFee | currency: 'BRL' : 'symbol' : '1.2-2' }}</dd>
+          </div>
+          <div class="notes">
+            <dt>Observações</dt>
+            <dd>{{ student.notes || '—' }}</dd>
+          </div>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+
+    <app-student-schedules-section [studentId]="student.id" />
+
+    <app-student-lessons-section [studentId]="student.id" />
+
+    <app-student-finance-section
+      [studentId]="student.id"
+      [monthlyFee]="student.monthlyFee"
+      [studentStatus]="student.status"
+    />
+
+    <mat-card class="placeholder-card">
+      <mat-card-header>
+        <mat-card-title>Próximas seções</mat-card-title>
+        <mat-card-subtitle>Disponíveis em etapas futuras</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <ul>
+          <li>Frequência</li>
+        </ul>
+      </mat-card-content>
+    </mat-card>
+  </div>
+}
