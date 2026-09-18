@@ -21,7 +21,7 @@ Escolhas feitas pelo product owner em 2026-09-10.
 | DP-006 | C — REGULAR sem schedule permitido + aviso UI | Sem CHECK no banco; regra BR-020a |
 | DP-007 | B — `cancellationReason` sempre opcional | Sem CHECK status↔motivo |
 | DP-008 | B — `active` é fonte da verdade; `valid*` histórico | BR-015 |
-| DP-009 | A — adiar até geração de aulas | BR-062; único item ainda aberto |
+| DP-009 | ~~A — adiar~~ **Superseded** | Geração implementada: 1 ocorrência/semana, horizonte 3 meses (BR-060–065). Antiga regra das 4 aulas removida. |
 | DP-010 | B — `SCHEDULED` fora; período padrão = mês corrente | BR-038, BR-039 |
 | DP-011 | A — `America/Sao_Paulo` | BR-070 |
 | DP-012 | A — sem hard delete no MVP | BR-006; FKs RESTRICT |
@@ -29,5 +29,5 @@ Escolhas feitas pelo product owner em 2026-09-10.
 ## Consequences
 
 - Schema proposto em `docs/database.md` deixa de ser provisório nos pontos acima.
-- DP-009 permanece adiado e **não** bloqueia a primeira migration.
-- Próximo passo técnico: Prisma schema + migration inicial (quando solicitado).
+- DP-009 foi supersedida pela geração Schedule→Lesson (sem regra de 4 aulas/mês).
+- UNIQUE `(schedule_id, date)` em `lessons` garante idempotência da geração (NULLs distintos permitem ONE_OFF/MAKEUP sem schedule).

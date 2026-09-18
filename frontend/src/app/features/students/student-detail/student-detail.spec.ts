@@ -84,7 +84,7 @@ describe('StudentDetail', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Maria Silva');
     expect(fixture.nativeElement.textContent).toContain('Horário semanal');
-    expect(fixture.nativeElement.textContent).toContain('Aulas');
+    expect(fixture.nativeElement.textContent).toContain('Diário pedagógico');
     expect(fixture.nativeElement.textContent).toContain('Financeiro');
     expect(fixture.nativeElement.textContent).toContain('Frequência');
   });

@@ -22,6 +22,8 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CancelLessonDto } from './dto/cancel-lesson.dto';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { GenerateLessonsDto } from './dto/generate-lessons.dto';
+import { GenerateLessonsResponseDto } from './dto/generate-lessons-response.dto';
 import { LessonResponseDto } from './dto/lesson-response.dto';
 import { ListLessonsQueryDto } from './dto/list-lessons-query.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
@@ -43,6 +45,18 @@ export class LessonsController {
   @ApiCreatedResponse({ type: LessonResponseDto })
   create(@Body() dto: CreateLessonDto): Promise<LessonResponseDto> {
     return this.lessonsService.create(dto);
+  }
+
+  @Post('generate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Generate upcoming REGULAR lessons from active schedules',
+    description:
+      'Creates missing weekly REGULAR/SCHEDULED lessons for ACTIVE students and active schedules up to 3 calendar months ahead. Idempotent: existing lessons (any status) for the same schedule+date are left untouched.',
+  })
+  @ApiOkResponse({ type: GenerateLessonsResponseDto })
+  generate(@Body() dto: GenerateLessonsDto): Promise<GenerateLessonsResponseDto> {
+    return this.lessonsService.generate(dto);
   }
 
   @Get()

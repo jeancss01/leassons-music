@@ -238,8 +238,38 @@ frequency = completed / (completed + noShow)
 
 `MAKEUP` com status `COMPLETED` conta como aula realizada (entra em `completed`).
 
-### Regra das 4 aulas
+### Schedule → Lesson
 
-Em um mês civil, a quinta ocorrência semanal do horário recorrente **não** deve ser gerada automaticamente como aula; fica reservada para exercícios.
+`Schedule` representa uma **recorrência semanal** (um weekday + horário).
 
-Detalhes de **transição entre meses** ficam adiados até a implementação da geração de aulas (não inventar regra agora).
+Cada ocorrência válida no horizonte de planejamento gera uma Lesson:
+
+- `type = REGULAR`
+- `status = SCHEDULED`
+- `scheduleId` preenchido
+- `content` / `exercises` / `observations` vazios (planejamento posterior)
+
+### Horizonte
+
+Lessons futuras podem ser geradas até no máximo **3 meses de calendário** a partir da data atual (`America/Sao_Paulo`).  
+Ex.: 2026-09-18 → limite 2026-12-18.
+
+### Tipos
+
+| Tipo | Origem |
+|------|--------|
+| `REGULAR` | Tipicamente originada de Schedule (geração ou criação manual) |
+| `ONE_OFF` | Aula avulsa manual; não altera Schedule |
+| `MAKEUP` | Reposição explícita; nunca criada pelo gerador |
+
+### Idempotência
+
+Executar a geração novamente não duplica nem altera Lessons existentes para o mesmo `scheduleId` + `date`.
+
+### Histórico
+
+Alterar Schedule **não** altera Lessons já existentes (BR-012).
+
+### Regra removida
+
+A antiga regra de “4 aulas por mês / quinta semana para exercícios” **não se aplica**.

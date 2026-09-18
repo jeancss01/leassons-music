@@ -29,7 +29,7 @@ export function parseTimeOnly(value: string): Date {
   return new Date(`1970-01-01T${normalized}.000Z`);
 }
 
-function formatDateOnly(value: Date): string {
+export function formatDateOnly(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 

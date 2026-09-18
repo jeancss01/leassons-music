@@ -127,6 +127,7 @@ model Lesson {
   @@index([studentId, date], map: "lessons_student_date_idx")
   @@index([status], map: "lessons_status_idx")
   @@index([type], map: "lessons_type_idx")
+  @@unique([scheduleId, date], map: "lessons_schedule_id_date_unique")
   @@map("lessons")
 }
 

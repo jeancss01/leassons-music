@@ -124,13 +124,13 @@
       <mat-card-header>
         <div class="diary-header">
           <div>
-            <mat-card-title>Diário pedagógico</mat-card-title>
-            <mat-card-subtitle>Registre o que foi trabalhado nesta aula</mat-card-subtitle>
+            <mat-card-title>{{ pedagogySectionTitle() }}</mat-card-title>
+            <mat-card-subtitle>{{ pedagogySectionSubtitle() }}</mat-card-subtitle>
           </div>
           @if (!editingDiary()) {
             <button mat-flat-button color="primary" type="button" (click)="startDiaryEdit()">
               <mat-icon>edit_note</mat-icon>
-              Editar diário
+              {{ editPedagogyLabel() }}
             </button>
           }
         </div>
@@ -140,12 +140,12 @@
         @if (editingDiary()) {
           <form class="diary-form" [formGroup]="diaryForm" (ngSubmit)="saveDiary()">
             <mat-form-field appearance="outline">
-              <mat-label>Conteúdo</mat-label>
+              <mat-label>{{ contentLabel() }}</mat-label>
               <textarea matInput rows="4" formControlName="content"></textarea>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Exercícios</mat-label>
+              <mat-label>{{ exercisesLabel() }}</mat-label>
               <textarea matInput rows="4" formControlName="exercises"></textarea>
             </mat-form-field>
 
@@ -177,7 +177,7 @@
                   <mat-progress-spinner diameter="18" mode="indeterminate" />
                   Salvando…
                 } @else {
-                  Salvar diário
+                  {{ savePedagogyLabel() }}
                 }
               </button>
             </div>
@@ -185,19 +185,19 @@
         } @else if (!hasDiary()) {
           <div class="diary-empty">
             <mat-icon>menu_book</mat-icon>
-            <p>Nenhum registro ainda.</p>
+            <p>{{ emptyPedagogyMessage() }}</p>
             <button mat-stroked-button type="button" (click)="startDiaryEdit()">
-              Editar diário
+              {{ editPedagogyLabel() }}
             </button>
           </div>
         } @else {
           <div class="diary-read">
             <section>
-              <h3>Conteúdo</h3>
+              <h3>{{ contentLabel() }}</h3>
               <p class="multiline">{{ lesson.content || '—' }}</p>
             </section>
             <section>
-              <h3>Exercícios</h3>
+              <h3>{{ exercisesLabel() }}</h3>
               <p class="multiline">{{ lesson.exercises || '—' }}</p>
             </section>
             <section>

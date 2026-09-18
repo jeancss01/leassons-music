@@ -87,6 +87,31 @@ describe('LessonApiService', () => {
     expect(result).toEqual(lesson);
   });
 
+  it('generates upcoming lessons for a student', () => {
+    let result: { created: number; alreadyExisted: number } | undefined;
+    service.generate({ studentId }).subscribe((value) => {
+      result = value;
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/generate`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ studentId });
+    req.flush({
+      from: '2026-09-18',
+      to: '2026-12-18',
+      schedulesConsidered: 1,
+      created: 12,
+      alreadyExisted: 8,
+    });
+    expect(result).toEqual({
+      from: '2026-09-18',
+      to: '2026-12-18',
+      schedulesConsidered: 1,
+      created: 12,
+      alreadyExisted: 8,
+    });
+  });
+
   it('updates a lesson', () => {
     let result: Lesson | undefined;
     service.update(lessonId, { content: 'Escala' }).subscribe((value) => {

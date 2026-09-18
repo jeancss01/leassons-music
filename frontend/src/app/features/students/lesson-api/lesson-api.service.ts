@@ -5,6 +5,8 @@ import { environment } from '../../../../environments/environment';
 import {
   CancelLessonRequest,
   CreateLessonRequest,
+  GenerateLessonsRequest,
+  GenerateLessonsResponse,
   Lesson,
   ListLessonsParams,
   UpdateLessonRequest,
@@ -38,6 +40,10 @@ export class LessonApiService {
 
   create(body: CreateLessonRequest): Observable<Lesson> {
     return this.http.post<Lesson>(this.baseUrl, body);
+  }
+
+  generate(body: GenerateLessonsRequest = {}): Observable<GenerateLessonsResponse> {
+    return this.http.post<GenerateLessonsResponse>(`${this.baseUrl}/generate`, body);
   }
 
   update(id: string, body: UpdateLessonRequest): Observable<Lesson> {

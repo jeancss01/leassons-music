@@ -109,6 +109,8 @@ frequency = completed / (completed + noShow)
 
 **BR-050** — Conteúdo pedagógico da aula fica em `Lesson.content`, `Lesson.exercises`, `Lesson.observations`. **DB** (colunas TEXT nullable)
 
+**BR-050a** — Uma Lesson com status `SCHEDULED` pode conter planejamento pedagógico antes de sua realização. O mesmo registro pode posteriormente representar o diário da aula realizada (`COMPLETED` e demais status finais). Não existe entidade separada de planejamento ou diário. **APP** (UX/contrato; mesmos campos)
+
 **BR-051** — Esses campos armazenam Markdown puro. **APP** (sem HTML sanitizado no armazenamento; renderização/sanitização é concern de UI)
 
 **BR-052** — Tags pedagógicas: `Tag` com `name` único; associação N:N via `LessonTag` com PK `(lessonId, tagId)`. **DB** + **APP**
@@ -143,19 +145,25 @@ frequency = completed / (completed + noShow)
 
 ---
 
-## Regra das 4 aulas
+## Geração de Lessons a partir de Schedule
 
-**BR-060** — Um mês que contenha uma quinta ocorrência semanal do horário recorrente **não** deve gerar automaticamente uma quinta aula. **APP** (lógica de geração)
+**BR-060** — Cada `Schedule` ativo representa **uma ocorrência semanal**. Não há limite de aulas por mês. **APP**
 
-**BR-061** — A quinta semana fica reservada para exercícios. **APP** (não gera `Lesson` automática)
+**BR-061** — A geração manual (`POST /lessons/generate`) cria Lessons `REGULAR` / `SCHEDULED` a partir dos Schedules aplicáveis, até no máximo **3 meses de calendário** a partir de “hoje” (`America/Sao_Paulo`). Ex.: 2026-09-18 → limite 2026-12-18. O backend é a autoridade do horizonte; o cliente não pode estender esse limite. **APP**
 
-**BR-062** — Detalhes de transição entre meses na regra das 4 aulas ficam **adiados** até a implementação da geração de aulas. Não inventar regra agora. **APP** (adiado)
+**BR-062** — Uma ocorrência só é gerada se: Student `ACTIVE`; Schedule `active = true`; `date >= validFrom`; e, se `validUntil` existir, `date <= validUntil`. **APP**
+
+**BR-063** — Lessons geradas carregam `studentId`, `scheduleId`, `date`, `startTime` e `durationMinutes` do Schedule. Não preenchem `content` / `exercises` / `observations`. **APP**
+
+**BR-064** — A geração é idempotente: não duplica, não sobrescreve planejamento e não altera Lessons existentes (qualquer status) para o mesmo `scheduleId` + `date`. **DB** (UNIQUE parcial efetiva via UNIQUE `(schedule_id, date)` com NULLs distintos) + **APP** (`createMany` + `skipDuplicates`)
+
+**BR-065** — MAKEUP e ONE_OFF não são criadas pelo gerador. Cancelamento continua sem reposição automática (BR-023–027). **APP**
 
 ---
 
 ## Operação / tempo
 
-**BR-070** — Fuso horário operacional do domínio (agenda, “hoje”, mês corrente da frequência/dashboard): `America/Sao_Paulo`. **APP**
+**BR-070** — Fuso horário operacional do domínio (agenda, “hoje”, mês corrente da frequência/dashboard, horizonte de geração): `America/Sao_Paulo`. **APP**
 
 ---
 
@@ -178,6 +186,5 @@ Não inventar `POST /monthly-charges/:id/cancel` até decisão explícita.
 - Pró-rata automático
 - Cobrança parcial / parcelamento
 - Geração automática de reposição a partir de cancelamentos
-- Geração automática da quinta aula semanal do mês
+- Cron/job automático de geração de Lessons (geração é manual)
 - Hard delete de entidades de domínio
-- Regra detalhada de transição entre meses (DP-009 adiado)

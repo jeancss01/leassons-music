@@ -1,3 +1,7 @@
+.finance-card mat-card-header {
+  margin-bottom: 0.5rem;
+}
+
 .header-row {
   display: flex;
   flex-wrap: wrap;
@@ -15,10 +19,15 @@
 
 .generate-row {
   display: grid;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
+  gap: 1.1rem;
+  margin-top: 0.75rem;
+  margin-bottom: 1.35rem;
+  padding-bottom: 1.35rem;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.generate-row mat-form-field {
+  margin-bottom: 0.15rem;
 }
 
 .generate-hint {
@@ -44,7 +53,7 @@
 .charge-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .charge-item {
@@ -80,13 +89,13 @@
 }
 
 .amount {
-  margin: 0.35rem 0 0.15rem;
+  margin: 0.45rem 0 0.3rem;
   font: var(--mat-sys-title-medium);
 }
 
 .meta,
 .notes {
-  margin: 0.2rem 0 0;
+  margin: 0.35rem 0 0;
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-small);
 }
@@ -117,7 +126,13 @@
 @media (min-width: 720px) {
   .generate-row {
     grid-template-columns: minmax(10rem, 14rem) auto;
-    align-items: center;
+    align-items: start;
+    column-gap: 1rem;
+    row-gap: 0.85rem;
+  }
+
+  .generate-row button[mat-flat-button] {
+    margin-top: 0.35rem;
   }
 
   .generate-hint {

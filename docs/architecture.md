@@ -41,7 +41,11 @@ Rotas principais (JWT):
 - `/students`, `/students/new`, `/students/:id`, `/students/:id/edit`
 - `/students/:id/schedule/new`, `/students/:id/schedule/:scheduleId/edit`
 - `/students/:id/lesson/new`, `/students/:id/lesson/:lessonId`, `/students/:id/lesson/:lessonId/edit`
-  - no detalhe da aula, o **diário pedagógico** (conteúdo/exercícios/observações) pode ser editado inline via `PATCH /lessons/:id`; a rota `/edit` permanece para os demais campos
+  - no detalhe do aluno, a seção **Diário pedagógico** organiza Lessons em Hoje / Próximas / Histórico (filtro temporal por `date`; planejamento visível no card)
+  - ação **Gerar próximas aulas** chama `POST /lessons/generate` (horizonte de 3 meses de calendário; idempotente) e atualiza o diário
+  - ação **Planejar próxima aula** aponta para a primeira Lesson com `date > hoje` (ordenado por data/horário) com `?plan=1`; se não houver Lesson futura, exibe estado + **Nova aula** (sem gerar a partir de Schedule)
+  - no detalhe da aula, o **planejamento** (`SCHEDULED`) ou **diário** (aula realizada) usa os mesmos campos `content`/`exercises`/`observations` via `PATCH /lessons/:id`; a rota `/edit` permanece para os demais campos
+  - `?plan=1` no detalhe da aula abre o editor inline do planejamento
 - Financeiro (mensalidades) na seção do detalhe do aluno — sem rota global nesta etapa
 
 ### Limitações do Dashboard (dados existentes)

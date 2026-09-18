@@ -1,12 +1,27 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CancellationReason, Lesson, LessonStatus, Prisma } from '@prisma/client';
+import {
+  CancellationReason,
+  Lesson,
+  LessonStatus,
+  LessonType,
+  Prisma,
+  StudentStatus,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CancelLessonDto } from './dto/cancel-lesson.dto';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { GenerateLessonsDto } from './dto/generate-lessons.dto';
+import { GenerateLessonsResponseDto } from './dto/generate-lessons-response.dto';
 import { LessonResponseDto } from './dto/lesson-response.dto';
 import { ListLessonsQueryDto } from './dto/list-lessons-query.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
-import { parseDateOnly, parseTimeOnly, toLessonResponse } from './lesson.mapper';
+import {
+  effectiveGenerationRange,
+  planningHorizonEnd,
+  todaySaoPaulo,
+  weeklyOccurrenceDates,
+} from './lesson-generation';
+import { formatDateOnly, parseDateOnly, parseTimeOnly, toLessonResponse } from './lesson.mapper';
 
 @Injectable()
 export class LessonsService {
@@ -37,6 +52,98 @@ export class LessonsService {
     });
 
     return toLessonResponse(lesson);
+  }
+
+  async generate(
+    dto: GenerateLessonsDto,
+    now: Date = new Date(),
+  ): Promise<GenerateLessonsResponseDto> {
+    const from = todaySaoPaulo(now);
+    const to = planningHorizonEnd(from);
+
+    if (dto.studentId) {
+      const student = await this.prisma.student.findUnique({
+        where: { id: dto.studentId },
+        select: { id: true, status: true },
+      });
+      if (!student) {
+        throw new NotFoundException(`Student ${dto.studentId} not found`);
+      }
+    }
+
+    const schedules = await this.prisma.schedule.findMany({
+      where: {
+        active: true,
+        student: {
+          status: StudentStatus.ACTIVE,
+          ...(dto.studentId ? { id: dto.studentId } : {}),
+        },
+      },
+      select: {
+        id: true,
+        studentId: true,
+        weekday: true,
+        startTime: true,
+        durationMinutes: true,
+        validFrom: true,
+        validUntil: true,
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    const candidates: Prisma.LessonCreateManyInput[] = [];
+
+    for (const schedule of schedules) {
+      const range = effectiveGenerationRange({
+        todayIso: from,
+        horizonEndIso: to,
+        validFromIso: formatDateOnly(schedule.validFrom),
+        validUntilIso: schedule.validUntil ? formatDateOnly(schedule.validUntil) : null,
+      });
+      if (!range) {
+        continue;
+      }
+
+      const dates = weeklyOccurrenceDates(schedule.weekday, range.from, range.to);
+      for (const date of dates) {
+        candidates.push({
+          studentId: schedule.studentId,
+          scheduleId: schedule.id,
+          date: parseDateOnly(date),
+          startTime: schedule.startTime,
+          durationMinutes: schedule.durationMinutes,
+          type: LessonType.REGULAR,
+          status: LessonStatus.SCHEDULED,
+          cancellationReason: null,
+          content: null,
+          exercises: null,
+          observations: null,
+        });
+      }
+    }
+
+    if (candidates.length === 0) {
+      return {
+        from,
+        to,
+        schedulesConsidered: schedules.length,
+        created: 0,
+        alreadyExisted: 0,
+      };
+    }
+
+    const result = await this.prisma.lesson.createMany({
+      data: candidates,
+      skipDuplicates: true,
+    });
+
+    return {
+      from,
+      to,
+      schedulesConsidered: schedules.length,
+      created: result.count,
+      alreadyExisted: candidates.length - result.count,
+    };
   }
 
   async findAll(query: ListLessonsQueryDto): Promise<LessonResponseDto[]> {

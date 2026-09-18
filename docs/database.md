@@ -32,7 +32,7 @@ Decisões de modelagem fechadas: `docs/decisions/002-domain-pending-closed.md`.
 | UNIQUE cobrança por aluno/mês | BR-044 | **DB** |
 | amount copiado na geração | BR-042, BR-043, BR-053 | **DB** coluna; **APP** cópia |
 | Frequência mês corrente; SCHEDULED fora | BR-030–039 | **DERIVED** / **APP** |
-| Regra das 4 aulas (+ DP-009 adiado) | BR-060–062 | **APP** |
+| Geração semanal Schedule→Lesson; horizonte 3 meses | BR-060–065 | **APP** + **DB** UNIQUE `(schedule_id, date)` |
 | Timezone America/Sao_Paulo | BR-070 | **APP** (interpretação; colunas DATE/TIME sem TZ) |
 
 ---
@@ -227,7 +227,7 @@ CREATE INDEX monthly_charges_reference_month_idx ON monthly_charges (reference_m
 6. Não gerar reposição automática (BR-023–027)
 7. Cópia de `monthlyFee` → `amount` (BR-053)
 8. Independência pagamento × aulas (BR-040, BR-045)
-9. Regra das 4 aulas e transição de meses (BR-060–062)
+9. Horizonte de geração e filtros de Schedule/Student (BR-060–065) — UNIQUE `(schedule_id, date)` no DB; lógica APP
 10. Cálculo de frequência no mês corrente (BR-030–039)
 11. Convenção Markdown (BR-051)
 12. Interpretação de `DATE`/`TIME` em `America/Sao_Paulo` (BR-070)
@@ -243,6 +243,7 @@ CREATE INDEX monthly_charges_reference_month_idx ON monthly_charges (reference_m
 | `schedules(student_id)` | Agenda por aluno |
 | `schedules(student_id, active)` | Horários em uso |
 | `lessons(student_id, date)` | Histórico / dia / dashboard |
+| `lessons(schedule_id, date)` UNIQUE | Idempotência da geração Schedule→Lesson |
 | `lessons(status)`, `lessons(type)` | Filtros e frequência |
 | `tags(name)` | UNIQUE + busca |
 | `monthly_charges` UNIQUE + status/mês | Listagens financeiras |
@@ -266,8 +267,7 @@ CREATE INDEX monthly_charges_reference_month_idx ON monthly_charges (reference_m
 
 - Tabela `attendances`
 - Parcelamento / pagamento parcial
-- Tabela da “quinta semana / exercícios”
-- Triggers de geração automática
+- Triggers de geração automática / cron de Lessons
 - Tabela de usuários (auth v1 = env + JWT)
 
 ---

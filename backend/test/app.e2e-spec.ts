@@ -18,6 +18,12 @@ describe('API (e2e)', () => {
   let app: INestApplication<App>;
   let accessToken: string;
 
+  beforeAll(() => {
+    process.env.AUTH_USERNAME = 'admin';
+    process.env.AUTH_PASSWORD = 'change-me';
+    process.env.JWT_SECRET = 'test-jwt-secret-for-e2e';
+  });
+
   const now = new Date('2026-09-10T12:00:00.000Z');
   const studentRow = {
     id: '11111111-1111-4111-8111-111111111111',
@@ -101,6 +107,7 @@ describe('API (e2e)', () => {
     },
     lesson: {
       create: jest.fn().mockResolvedValue(lessonRow),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
       findMany: jest.fn().mockResolvedValue([lessonRow]),
       findUnique: jest.fn().mockResolvedValue(lessonRow),
       update: jest.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) =>
@@ -763,6 +770,42 @@ describe('API (e2e)', () => {
     const body = response.body as { created: number; alreadyExisted: number };
     expect(body.created).toBe(0);
     expect(body.alreadyExisted).toBe(1);
+  });
+
+  it('POST /lessons/generate creates missing REGULAR lessons idempotently', async () => {
+    prismaMock.schedule.findMany.mockResolvedValueOnce([scheduleRow]);
+    prismaMock.lesson.createMany.mockResolvedValueOnce({ count: 5 });
+
+    const first = await request(app.getHttpServer())
+      .post('/lessons/generate')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ studentId: studentRow.id })
+      .expect(200);
+
+    const firstBody = first.body as {
+      from: string;
+      to: string;
+      created: number;
+      alreadyExisted: number;
+      schedulesConsidered: number;
+    };
+    expect(firstBody.schedulesConsidered).toBe(1);
+    expect(firstBody.created).toBe(5);
+    expect(firstBody.from <= firstBody.to).toBe(true);
+    expect(prismaMock.lesson.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skipDuplicates: true }),
+    );
+
+    prismaMock.schedule.findMany.mockResolvedValueOnce([scheduleRow]);
+    prismaMock.lesson.createMany.mockResolvedValueOnce({ count: 0 });
+
+    const second = await request(app.getHttpServer())
+      .post('/lessons/generate')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ studentId: studentRow.id })
+      .expect(200);
+
+    expect((second.body as { created: number }).created).toBe(0);
   });
 
   it('POST /monthly-charges/:id/pay and unpay', async () => {

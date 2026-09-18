@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { apiErrorMessage } from '../../../core/http/api-error';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog';
@@ -28,6 +28,7 @@ import {
   formatTimeDisplay as formatScheduleTime,
   WEEKDAY_LABELS,
 } from '../schedule-api/schedule.model';
+import { hasLessonPedagogy } from '../student-lessons/lesson-diary.utils';
 import { CancelLessonDialog } from './cancel-lesson-dialog';
 
 @Component({
@@ -50,11 +51,13 @@ import { CancelLessonDialog } from './cancel-lesson-dialog';
 })
 export class LessonDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly lessonApi = inject(LessonApiService);
   private readonly scheduleApi = inject(ScheduleApiService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder);
+  private openPlanEditorOnLoad = false;
 
   readonly studentId = toSignal(this.route.paramMap.pipe(map((params) => params.get('id'))), {
     initialValue: null as string | null,
@@ -88,13 +91,41 @@ export class LessonDetail implements OnInit {
   readonly isScheduled = computed(() => this.lesson()?.status === 'SCHEDULED');
   readonly hasDiary = computed(() => {
     const current = this.lesson();
-    if (!current) {
-      return false;
-    }
-    return !!(current.content?.trim() || current.exercises?.trim() || current.observations?.trim());
+    return current ? hasLessonPedagogy(current) : false;
   });
+  readonly pedagogySectionTitle = computed(() =>
+    this.isScheduled() ? 'Planejamento' : 'Diário da aula',
+  );
+  readonly pedagogySectionSubtitle = computed(() =>
+    this.isScheduled()
+      ? 'Planeje o que será trabalhado nesta aula'
+      : 'Registre o que foi trabalhado nesta aula',
+  );
+  readonly contentLabel = computed(() =>
+    this.isScheduled() ? 'Conteúdo planejado' : 'Conteúdo',
+  );
+  readonly exercisesLabel = computed(() =>
+    this.isScheduled() ? 'Exercícios planejados' : 'Exercícios',
+  );
+  readonly editPedagogyLabel = computed(() =>
+    this.isScheduled()
+      ? this.hasDiary()
+        ? 'Editar planejamento'
+        : 'Planejar aula'
+      : 'Editar diário',
+  );
+  readonly savePedagogyLabel = computed(() =>
+    this.isScheduled() ? 'Salvar planejamento' : 'Salvar diário',
+  );
+  readonly emptyPedagogyMessage = computed(() =>
+    this.isScheduled() ? 'Sem planejamento.' : 'Nenhum registro ainda.',
+  );
+  readonly successPedagogyMessage = computed(() =>
+    this.isScheduled() ? 'Planejamento atualizado.' : 'Diário atualizado.',
+  );
 
   ngOnInit(): void {
+    this.openPlanEditorOnLoad = this.route.snapshot.queryParamMap.get('plan') === '1';
     this.load();
   }
 
@@ -121,6 +152,7 @@ export class LessonDetail implements OnInit {
         this.lesson.set(lesson);
         this.loading.set(false);
         this.loadScheduleLabel(studentId, lesson.scheduleId);
+        this.maybeOpenPlanEditor();
       },
       error: (err: unknown) => {
         this.lesson.set(null);
@@ -160,7 +192,9 @@ export class LessonDetail implements OnInit {
       .open(ConfirmDialog, {
         data: {
           title: 'Descartar alterações?',
-          message: 'As mudanças no diário ainda não foram salvas.',
+          message: this.isScheduled()
+            ? 'As mudanças no planejamento ainda não foram salvas.'
+            : 'As mudanças no diário ainda não foram salvas.',
           confirmLabel: 'Descartar',
         },
       })
@@ -197,11 +231,18 @@ export class LessonDetail implements OnInit {
         this.savingDiary.set(false);
         this.editingDiary.set(false);
         this.diaryForm.markAsPristine();
-        this.snackBar.open('Diário atualizado.', 'Fechar', { duration: 3000 });
+        this.snackBar.open(this.successPedagogyMessage(), 'Fechar', { duration: 3000 });
       },
       error: (err: unknown) => {
         this.savingDiary.set(false);
-        this.diaryError.set(apiErrorMessage(err, 'Não foi possível salvar o diário.'));
+        this.diaryError.set(
+          apiErrorMessage(
+            err,
+            this.isScheduled()
+              ? 'Não foi possível salvar o planejamento.'
+              : 'Não foi possível salvar o diário.',
+          ),
+        );
       },
     });
   }
@@ -294,6 +335,26 @@ export class LessonDetail implements OnInit {
           },
         });
       });
+  }
+
+  private maybeOpenPlanEditor(): void {
+    if (!this.openPlanEditorOnLoad) {
+      return;
+    }
+
+    this.openPlanEditorOnLoad = false;
+    this.startDiaryEdit();
+
+    const studentId = this.studentId();
+    const lessonId = this.lessonId();
+    if (!studentId || !lessonId) {
+      return;
+    }
+
+    void this.router.navigate(['/students', studentId, 'lesson', lessonId], {
+      replaceUrl: true,
+      queryParams: {},
+    });
   }
 
   private loadScheduleLabel(studentId: string, scheduleId: string | null): void {

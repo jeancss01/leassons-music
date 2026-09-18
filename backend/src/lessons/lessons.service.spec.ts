@@ -29,21 +29,26 @@ describe('LessonsService', () => {
   };
 
   const studentCount = jest.fn();
+  const studentFindUnique = jest.fn();
   const scheduleFindUnique = jest.fn();
+  const scheduleFindMany = jest.fn();
   const scheduleUpdate = jest.fn();
   const lessonCreate = jest.fn();
+  const lessonCreateMany = jest.fn();
   const lessonFindMany = jest.fn();
   const lessonFindUnique = jest.fn();
   const lessonUpdate = jest.fn();
 
   const prisma = {
-    student: { count: studentCount },
+    student: { count: studentCount, findUnique: studentFindUnique },
     schedule: {
       findUnique: scheduleFindUnique,
+      findMany: scheduleFindMany,
       update: scheduleUpdate,
     },
     lesson: {
       create: lessonCreate,
+      createMany: lessonCreateMany,
       findMany: lessonFindMany,
       findUnique: lessonFindUnique,
       update: lessonUpdate,
@@ -325,5 +330,135 @@ describe('LessonsService', () => {
 
     expect(result.type).toBe(LessonType.MAKEUP);
     expect(result.status).toBe(LessonStatus.COMPLETED);
+  });
+
+  describe('generate', () => {
+    const generateNow = new Date('2026-09-18T15:00:00.000Z'); // 12:00 São Paulo → 2026-09-18
+    const mondaySchedule = {
+      id: scheduleId,
+      studentId,
+      weekday: 'MONDAY' as const,
+      startTime: new Date('1970-01-01T19:00:00.000Z'),
+      durationMinutes: 60,
+      validFrom: new Date('2026-01-01T00:00:00.000Z'),
+      validUntil: null as Date | null,
+    };
+
+    it('creates REGULAR SCHEDULED lessons weekly up to 3 calendar months', async () => {
+      scheduleFindMany.mockResolvedValue([mondaySchedule]);
+      lessonCreateMany.mockResolvedValue({ count: 13 });
+
+      const result = await service.generate({}, generateNow);
+
+      expect(result.from).toBe('2026-09-18');
+      expect(result.to).toBe('2026-12-18');
+      expect(result.schedulesConsidered).toBe(1);
+      expect(result.created).toBe(13);
+      expect(result.alreadyExisted).toBe(0);
+
+      const createManyCalls = lessonCreateMany.mock.calls as unknown as Array<
+        [
+          {
+            data: Array<{ date: Date; type: LessonType; status: LessonStatus }>;
+            skipDuplicates: boolean;
+          },
+        ]
+      >;
+      const createManyArg = createManyCalls[0][0];
+      expect(createManyArg.skipDuplicates).toBe(true);
+      expect(createManyArg.data).toHaveLength(13);
+      expect(createManyArg.data[0]).toMatchObject({
+        studentId,
+        scheduleId,
+        type: LessonType.REGULAR,
+        status: LessonStatus.SCHEDULED,
+        content: null,
+        exercises: null,
+        observations: null,
+        date: new Date('2026-09-21T00:00:00.000Z'),
+      });
+      expect(createManyArg.data.at(-1)?.date).toEqual(new Date('2026-12-14T00:00:00.000Z'));
+      expect(
+        createManyArg.data.some((row) => row.date.toISOString().startsWith('2026-12-21')),
+      ).toBe(false);
+      expect(lessonUpdate).not.toHaveBeenCalled();
+    });
+
+    it('is idempotent on second run and never updates existing lessons', async () => {
+      studentFindUnique.mockResolvedValue({ id: studentId, status: 'ACTIVE' });
+      scheduleFindMany.mockResolvedValue([mondaySchedule]);
+      lessonCreateMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.generate({ studentId }, generateNow);
+
+      expect(studentFindUnique).toHaveBeenCalled();
+      expect(result.created).toBe(0);
+      expect(result.alreadyExisted).toBe(13);
+      expect(lessonUpdate).not.toHaveBeenCalled();
+      const createManyCalls = lessonCreateMany.mock.calls as unknown as Array<
+        [{ skipDuplicates: boolean }]
+      >;
+      expect(createManyCalls[0][0].skipDuplicates).toBe(true);
+    });
+
+    it('respects validFrom and validUntil', async () => {
+      scheduleFindMany.mockResolvedValue([
+        {
+          ...mondaySchedule,
+          validFrom: new Date('2026-10-01T00:00:00.000Z'),
+          validUntil: new Date('2026-10-15T00:00:00.000Z'),
+        },
+      ]);
+      lessonCreateMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.generate({}, generateNow);
+      const createManyCalls = lessonCreateMany.mock.calls as unknown as Array<
+        [{ data: Array<{ date: Date }> }]
+      >;
+      const dates = createManyCalls[0][0].data.map((row) => row.date.toISOString().slice(0, 10));
+
+      expect(dates).toEqual(['2026-10-05', '2026-10-12']);
+      expect(result.created).toBe(2);
+    });
+
+    it('ignores inactive schedules and inactive students', async () => {
+      scheduleFindMany.mockResolvedValue([]);
+      studentFindUnique.mockResolvedValue({ id: studentId, status: 'INACTIVE' });
+
+      const result = await service.generate({ studentId }, generateNow);
+
+      expect(scheduleFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            active: true,
+            student: {
+              status: 'ACTIVE',
+              id: studentId,
+            },
+          },
+        }),
+      );
+      expect(lessonCreateMany).not.toHaveBeenCalled();
+      expect(result.created).toBe(0);
+      expect(result.schedulesConsidered).toBe(0);
+    });
+
+    it('404 when studentId does not exist', async () => {
+      studentFindUnique.mockResolvedValue(null);
+
+      await expect(service.generate({ studentId }, generateNow)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(lessonCreateMany).not.toHaveBeenCalled();
+    });
+
+    it('does not mutate Schedule during generation', async () => {
+      scheduleFindMany.mockResolvedValue([mondaySchedule]);
+      lessonCreateMany.mockResolvedValue({ count: 1 });
+
+      await service.generate({}, generateNow);
+
+      expect(scheduleUpdate).not.toHaveBeenCalled();
+    });
   });
 });

@@ -33,6 +33,7 @@ Erros de auth:
 | PATCH | `/schedules/:id` | JWT | Atualiza somente o Schedule |
 | GET | `/lessons` | JWT | Lista aulas (`studentId`, `from`, `to`, `status`) |
 | POST | `/lessons` | JWT | Cria aula (`status=SCHEDULED`) |
+| POST | `/lessons/generate` | JWT | Gera Lessons REGULAR faltantes a partir de Schedules (até 3 meses) |
 | GET | `/lessons/:id` | JWT | Detalhe |
 | PATCH | `/lessons/:id` | JWT | Atualiza dados (sem mudar status) |
 | POST | `/lessons/:id/complete` | JWT | `SCHEDULED → COMPLETED` |
@@ -122,6 +123,33 @@ Response `201`:
 ```
 
 Erros: `400`, `401`, `404` (student/schedule).
+
+**POST `/lessons/generate`**
+
+Gera Lessons `REGULAR` / `SCHEDULED` a partir de Schedules ativos de alunos `ACTIVE`, no horizonte **hoje → hoje + 3 meses de calendário** (`America/Sao_Paulo`). Idempotente.
+
+Request (body opcional):
+
+```json
+{ "studentId": "…" }
+```
+
+- Sem `studentId`: todos os alunos ACTIVE com Schedule ativo.
+- Com `studentId`: somente aquele aluno (404 se não existir).
+
+Response `200`:
+
+```json
+{
+  "from": "2026-09-18",
+  "to": "2026-12-18",
+  "schedulesConsidered": 2,
+  "created": 12,
+  "alreadyExisted": 8
+}
+```
+
+Não cria MAKEUP/ONE_OFF. Não altera Lessons existentes. Não altera Schedule.
 
 **GET `/lessons`**
 

@@ -89,6 +89,18 @@ export interface CancelLessonRequest {
   cancellationReason: CancellationReason;
 }
 
+export interface GenerateLessonsRequest {
+  studentId?: string;
+}
+
+export interface GenerateLessonsResponse {
+  from: string;
+  to: string;
+  schedulesConsidered: number;
+  created: number;
+  alreadyExisted: number;
+}
+
 export function toTimeInputValue(startTime: string): string {
   return startTime.length >= 5 ? startTime.slice(0, 5) : startTime;
 }

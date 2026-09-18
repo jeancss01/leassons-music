@@ -7,6 +7,25 @@
   width: 100%;
 }
 
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.header-actions a,
+.header-actions button,
+.card-actions a {
+  width: 100%;
+}
+
+.next-hint {
+  margin: 0.35rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
 .state {
   display: flex;
   flex-direction: column;
@@ -21,53 +40,192 @@
   color: var(--mat-sys-error);
 }
 
-.lesson-list {
+.diary-timeline,
+.lesson-list,
+.header-actions,
+.card-actions,
+.next-empty,
+.time-block {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
 }
 
-.lesson-item {
+.diary-timeline {
+  gap: 1.25rem;
+}
+
+.diary-group h3 {
+  margin: 0 0 0.65rem;
+  font: var(--mat-sys-title-small);
+  letter-spacing: 0.02em;
+  color: var(--mat-sys-on-surface);
+}
+
+.today-group {
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-primary) 22%, var(--mat-sys-outline-variant));
+  background: color-mix(in srgb, var(--mat-sys-primary) 4%, var(--mat-sys-surface-container-low));
+}
+
+.today-group h3 {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container-lowest);
-}
-
-.lesson-item[data-status='COMPLETED'] {
-  border-color: color-mix(in srgb, var(--mat-sys-primary) 35%, var(--mat-sys-outline-variant));
-}
-
-.lesson-item[data-status='NO_SHOW'] {
-  border-color: color-mix(in srgb, var(--mat-sys-error) 35%, var(--mat-sys-outline-variant));
-}
-
-.lesson-item[data-status='CANCELLED'] {
-  border-style: dashed;
-  opacity: 0.92;
-}
-
-.title-row {
-  display: flex;
-  flex-wrap: wrap;
   gap: 0.45rem;
-  align-items: center;
+  color: var(--mat-sys-on-surface);
 }
 
-.time-line,
-.cancel-reason {
-  margin: 0.35rem 0 0;
+.today-group h3::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+  flex-shrink: 0;
+}
+
+.group-empty {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-medium);
 }
 
+.today-group .group-empty {
+  background: color-mix(in srgb, var(--mat-sys-surface) 70%, transparent);
+  border: 1px dashed var(--mat-sys-outline-variant);
+}
+
+.next-empty {
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.next-empty p,
+.pedagogy p,
+.preview,
+.no-plan,
+.muted,
+.cancel-reason {
+  margin: 0;
+}
+
+.lesson-list {
+  gap: 0.75rem;
+}
+
+.lesson-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.9rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.today-card {
+  border-color: color-mix(in srgb, var(--mat-sys-primary) 35%, var(--mat-sys-outline-variant));
+  background: color-mix(in srgb, var(--mat-sys-primary) 5%, var(--mat-sys-surface-container-lowest));
+}
+
+.lesson-card[data-status='NO_SHOW'] {
+  border-color: color-mix(in srgb, var(--mat-sys-error) 35%, var(--mat-sys-outline-variant));
+}
+
+.lesson-card[data-status='CANCELLED'] {
+  border-style: dashed;
+  opacity: 0.94;
+}
+
+.card-top,
+.chips,
+.date-line {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.card-top {
+  gap: 0.65rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.time-block {
+  gap: 0.1rem;
+}
+
+.time {
+  font: var(--mat-sys-headline-small);
+  line-height: 1.1;
+}
+
+.duration,
+.type-line,
+.muted,
 .cancel-reason {
   color: var(--mat-sys-on-surface-variant);
+}
+
+.duration,
+.type-line,
+.cancel-reason {
   font: var(--mat-sys-body-small);
+}
+
+.chips {
+  gap: 0.4rem;
+}
+
+.date-line {
+  gap: 0.25rem;
+  align-items: baseline;
+  font: var(--mat-sys-body-large);
+}
+
+.type-line {
+  margin: 0.2rem 0 0;
+}
+
+.pedagogy {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.pedagogy h4 {
+  margin: 0 0 0.2rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+}
+
+.multiline {
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.preview {
+  margin-top: 0.35rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.no-plan {
+  margin-top: 0.25rem;
+  color: var(--mat-sys-tertiary);
+  font: var(--mat-sys-label-large);
+}
+
+.muted {
+  font: var(--mat-sys-body-medium);
+}
+
+.card-actions {
+  gap: 0.5rem;
+}
+
+.compact-main {
+  min-width: 0;
 }
 
 .status-chip,
@@ -102,4 +260,33 @@
 .type-chip {
   background: color-mix(in srgb, var(--mat-sys-on-surface-variant) 10%, transparent);
   color: var(--mat-sys-on-surface-variant);
+}
+
+@media (min-width: 640px) {
+  .header-actions,
+  .card-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .header-actions {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .header-actions a,
+  .header-actions button,
+  .card-actions a {
+    width: auto;
+  }
+
+  .compact-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .compact-actions {
+    flex-shrink: 0;
+  }
 }

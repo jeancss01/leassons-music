@@ -1,14 +1,55 @@
-<mat-card class="lessons-card">
+<mat-card class="diary-card">
   <mat-card-header>
     <div class="header-row">
       <div>
-        <mat-card-title>Aulas</mat-card-title>
-        <mat-card-subtitle>Histórico completo, incluindo faltas e cancelamentos</mat-card-subtitle>
+        <mat-card-title>Diário pedagógico</mat-card-title>
+        <mat-card-subtitle>
+          Hoje, próximas aulas e histórico recente · gera até 3 meses a partir do horário semanal
+        </mat-card-subtitle>
+        @if (nextLesson(); as next) {
+          <p class="next-hint">
+            Próxima: {{ next.date | date: 'dd/MM' }} · {{ formatTime(next.startTime) }} ·
+            {{ typeLabels[next.type] }} · {{ statusLabels[next.status] }}
+            @if (pedagogyPreview(next); as preview) {
+              · {{ preview }}
+            } @else {
+              · Sem planejamento
+            }
+          </p>
+        }
       </div>
-      <a mat-flat-button color="primary" [routerLink]="['/students', studentId(), 'lesson', 'new']">
-        <mat-icon>add</mat-icon>
-        Nova aula
-      </a>
+      <div class="header-actions">
+        @if (nextLesson(); as next) {
+          <a
+            mat-flat-button
+            color="primary"
+            [routerLink]="lessonDetailLink(next)"
+            [queryParams]="planQueryParams()"
+          >
+            <mat-icon>edit_note</mat-icon>
+            Planejar próxima aula
+          </a>
+        }
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="generating() || loading()"
+          (click)="generateUpcoming()"
+        >
+          @if (generating()) {
+            Gerando…
+          } @else {
+            Gerar próximas aulas
+          }
+        </button>
+        <a
+          mat-stroked-button
+          [routerLink]="['/students', studentId(), 'lesson', 'new']"
+        >
+          <mat-icon>add</mat-icon>
+          Nova aula
+        </a>
+      </div>
     </div>
   </mat-card-header>
 
@@ -16,7 +57,7 @@
     @if (loading()) {
       <div class="state" role="status">
         <mat-progress-spinner diameter="36" mode="indeterminate" />
-        <span>Carregando aulas…</span>
+        <span>Carregando diário…</span>
       </div>
     } @else if (error(); as message) {
       <div class="state error" role="alert">
@@ -27,38 +68,205 @@
       <div class="state empty">
         <p>Nenhuma aula registrada para este aluno.</p>
         <a mat-stroked-button [routerLink]="['/students', studentId(), 'lesson', 'new']">
-          Registrar aula
+          Nova aula
         </a>
       </div>
     } @else {
-      <div class="lesson-list" role="list">
-        @for (lesson of lessons(); track lesson.id) {
-          <article class="lesson-item" role="listitem" [attr.data-status]="lesson.status">
-            <div class="lesson-main">
-              <div class="title-row">
-                <strong>{{ lesson.date | date: 'dd/MM/yyyy' }}</strong>
-                <span class="status-chip" [attr.data-status]="lesson.status">
-                  {{ statusLabels[lesson.status] }}
-                </span>
-                <span class="type-chip">{{ typeLabels[lesson.type] }}</span>
-              </div>
-              <p class="time-line">
-                {{ formatTime(lesson.startTime) }} · {{ lesson.durationMinutes }} min
-              </p>
-              @if (lesson.status === 'CANCELLED' && lesson.cancellationReason) {
-                <p class="cancel-reason">
-                  Motivo: {{ reasonLabels[lesson.cancellationReason] }}
-                </p>
+      <div class="diary-timeline">
+        <section class="diary-group today-group" aria-labelledby="diary-today-heading">
+          <h3 id="diary-today-heading">Hoje</h3>
+
+          @if (groups().today.length === 0) {
+            <p class="group-empty">Nenhuma aula programada para hoje.</p>
+          } @else {
+            <div class="lesson-list" role="list">
+              @for (lesson of groups().today; track lesson.id) {
+                <article class="lesson-card today-card" role="listitem" [attr.data-status]="lesson.status">
+                  <div class="card-top">
+                    <div class="time-block">
+                      <span class="time">{{ formatTime(lesson.startTime) }}</span>
+                      <span class="duration">{{ lesson.durationMinutes }} min</span>
+                    </div>
+                    <div class="chips">
+                      <span class="status-chip" [attr.data-status]="lesson.status">
+                        {{ statusLabels[lesson.status] }}
+                      </span>
+                      <span class="type-chip">{{ typeLabels[lesson.type] }}</span>
+                    </div>
+                  </div>
+
+                  @if (hasPedagogy(lesson)) {
+                    <div class="pedagogy">
+                      @if (lesson.content?.trim()) {
+                        <section>
+                          <h4>
+                            {{
+                              lesson.status === 'SCHEDULED'
+                                ? 'Conteúdo planejado'
+                                : 'Conteúdo'
+                            }}
+                          </h4>
+                          <p class="multiline">{{ lesson.content }}</p>
+                        </section>
+                      }
+                      @if (lesson.exercises?.trim()) {
+                        <section>
+                          <h4>
+                            {{
+                              lesson.status === 'SCHEDULED'
+                                ? 'Exercícios planejados'
+                                : 'Exercícios'
+                            }}
+                          </h4>
+                          <p class="multiline">{{ lesson.exercises }}</p>
+                        </section>
+                      }
+                      @if (lesson.observations?.trim()) {
+                        <section>
+                          <h4>Observações</h4>
+                          <p class="multiline">{{ lesson.observations }}</p>
+                        </section>
+                      }
+                    </div>
+                  } @else if (lesson.status === 'SCHEDULED') {
+                    <p class="no-plan">Sem planejamento</p>
+                  }
+
+                  @if (lesson.status === 'CANCELLED' && lesson.cancellationReason) {
+                    <p class="cancel-reason">
+                      Motivo: {{ reasonLabels[lesson.cancellationReason] }}
+                    </p>
+                  }
+
+                  <div class="card-actions">
+                    <a
+                      mat-stroked-button
+                      [routerLink]="lessonDetailLink(lesson)"
+                    >
+                      Abrir aula
+                    </a>
+                    @if (lesson.status === 'SCHEDULED' && !hasPedagogy(lesson)) {
+                      <a
+                        mat-flat-button
+                        color="primary"
+                        [routerLink]="lessonDetailLink(lesson)"
+                        [queryParams]="planQueryParams()"
+                      >
+                        Planejar aula
+                      </a>
+                    }
+                  </div>
+                </article>
               }
             </div>
-            <a
-              mat-stroked-button
-              [routerLink]="['/students', studentId(), 'lesson', lesson.id]"
-            >
-              Abrir
-            </a>
-          </article>
-        }
+          }
+        </section>
+
+        <section class="diary-group" aria-labelledby="diary-upcoming-heading">
+          <h3 id="diary-upcoming-heading">Próximas aulas</h3>
+
+          @if (groups().upcoming.length === 0) {
+            <div class="group-empty next-empty">
+              <p>Não há próxima aula cadastrada.</p>
+              <a mat-stroked-button [routerLink]="['/students', studentId(), 'lesson', 'new']">
+                Nova aula
+              </a>
+            </div>
+          } @else {
+            <div class="lesson-list compact" role="list">
+              @for (lesson of groups().upcoming; track lesson.id) {
+                <article class="lesson-card compact-card" role="listitem" [attr.data-status]="lesson.status">
+                  <div class="compact-main">
+                    <div class="date-line">
+                      <strong>{{ lesson.date | date: 'dd/MM' }}</strong>
+                      <span>· {{ formatTime(lesson.startTime) }}</span>
+                    </div>
+                    <p class="type-line">{{ typeLabels[lesson.type] }}</p>
+                    @if (pedagogyPreview(lesson); as preview) {
+                      <p class="preview">{{ preview }}</p>
+                    } @else {
+                      <p class="no-plan">Sem planejamento</p>
+                    }
+                  </div>
+                  <div class="card-actions compact-actions">
+                    <a mat-stroked-button [routerLink]="lessonDetailLink(lesson)">Abrir</a>
+                    @if (!hasPedagogy(lesson)) {
+                      <a
+                        mat-button
+                        [routerLink]="lessonDetailLink(lesson)"
+                        [queryParams]="planQueryParams()"
+                      >
+                        Planejar
+                      </a>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+
+        <section class="diary-group" aria-labelledby="diary-history-heading">
+          <h3 id="diary-history-heading">Histórico</h3>
+
+          @if (groups().history.length === 0) {
+            <p class="group-empty">Nenhuma aula anterior ainda.</p>
+          } @else {
+            <div class="lesson-list" role="list">
+              @for (lesson of groups().history; track lesson.id) {
+                <article class="lesson-card history-card" role="listitem" [attr.data-status]="lesson.status">
+                  <div class="card-top">
+                    <div class="date-line">
+                      <strong>{{ lesson.date | date: 'dd/MM/yyyy' }}</strong>
+                      <span>· {{ formatTime(lesson.startTime) }}</span>
+                    </div>
+                    <div class="chips">
+                      <span class="status-chip" [attr.data-status]="lesson.status">
+                        {{ statusLabels[lesson.status] }}
+                      </span>
+                      <span class="type-chip">{{ typeLabels[lesson.type] }}</span>
+                    </div>
+                  </div>
+
+                  @if (hasPedagogy(lesson)) {
+                    <div class="pedagogy">
+                      @if (lesson.content?.trim()) {
+                        <section>
+                          <h4>Conteúdo</h4>
+                          <p class="multiline">{{ lesson.content }}</p>
+                        </section>
+                      }
+                      @if (lesson.exercises?.trim()) {
+                        <section>
+                          <h4>Exercícios</h4>
+                          <p class="multiline">{{ lesson.exercises }}</p>
+                        </section>
+                      }
+                      @if (lesson.observations?.trim()) {
+                        <section>
+                          <h4>Observações</h4>
+                          <p class="multiline">{{ lesson.observations }}</p>
+                        </section>
+                      }
+                    </div>
+                  } @else {
+                    <p class="muted">Sem registro pedagógico.</p>
+                  }
+
+                  @if (lesson.status === 'CANCELLED' && lesson.cancellationReason) {
+                    <p class="cancel-reason">
+                      Motivo: {{ reasonLabels[lesson.cancellationReason] }}
+                    </p>
+                  }
+
+                  <div class="card-actions">
+                    <a mat-stroked-button [routerLink]="lessonDetailLink(lesson)">Abrir aula</a>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
       </div>
     }
   </mat-card-content>

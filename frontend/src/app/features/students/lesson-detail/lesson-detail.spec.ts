@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -16,6 +16,7 @@ describe('LessonDetail', () => {
   let httpMock: HttpTestingController;
   let snackOpen: ReturnType<typeof vi.fn>;
   let dialogAfterClosed: ReturnType<typeof vi.fn>;
+  let routerNavigate: ReturnType<typeof vi.spyOn>;
 
   const studentId = '11111111-1111-4111-8111-111111111111';
   const lessonId = '33333333-3333-4333-8333-333333333333';
@@ -25,7 +26,7 @@ describe('LessonDetail', () => {
     id: lessonId,
     studentId,
     scheduleId: null,
-    date: '2026-09-15',
+    date: '2026-09-23',
     startTime: '14:30:00',
     durationMinutes: 60,
     type: 'REGULAR',
@@ -38,7 +39,10 @@ describe('LessonDetail', () => {
     updatedAt: '2026-09-10T12:00:00.000Z',
   };
 
-  async function setup(dialogResult: unknown = null): Promise<void> {
+  async function setup(
+    dialogResult: unknown = null,
+    queryParams: Record<string, string> = {},
+  ): Promise<void> {
     dialogAfterClosed = vi.fn(() => of(dialogResult));
     snackOpen = vi.fn();
 
@@ -51,6 +55,9 @@ describe('LessonDetail', () => {
         {
           provide: ActivatedRoute,
           useValue: {
+            snapshot: {
+              queryParamMap: convertToParamMap(queryParams),
+            },
             paramMap: of({
               get: (key: string) => {
                 if (key === 'id') {
@@ -78,27 +85,30 @@ describe('LessonDetail', () => {
     fixture = TestBed.createComponent(LessonDetail);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
+    routerNavigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   }
 
   afterEach(() => {
     httpMock.verify();
   });
 
-  it('loads lesson and shows diary content', async () => {
+  it('shows planning language for scheduled future lesson with content', async () => {
     await setup();
     fixture.detectChanges();
     httpMock.expectOne(lessonUrl).flush(lesson);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Agendada');
+    expect(text).toContain('Planejamento');
+    expect(text).toContain('Conteúdo planejado');
+    expect(text).toContain('Exercícios planejados');
     expect(text).toContain('Intro');
     expect(text).toContain('Cromáticos');
-    expect(text).toContain('Editar diário');
+    expect(text).toContain('Editar planejamento');
     expect(text).toContain('Marcar como concluída');
   });
 
-  it('shows empty diary state', async () => {
+  it('shows empty planning state for scheduled lesson without content', async () => {
     await setup();
     fixture.detectChanges();
     httpMock.expectOne(lessonUrl).flush({
@@ -109,10 +119,28 @@ describe('LessonDetail', () => {
     });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Nenhum registro ainda.');
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Sem planejamento.');
+    expect(text).toContain('Planejar aula');
   });
 
-  it('enters diary edit mode with current values', async () => {
+  it('opens planning editor from plan query param', async () => {
+    await setup(null, { plan: '1' });
+    fixture.detectChanges();
+    httpMock.expectOne(lessonUrl).flush({
+      ...lesson,
+      content: null,
+      exercises: null,
+      observations: null,
+    });
+    fixture.detectChanges();
+
+    expect(component.editingDiary()).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Salvar planejamento');
+    expect(routerNavigate).toHaveBeenCalled();
+  });
+
+  it('enters planning edit mode with current values', async () => {
     await setup();
     fixture.detectChanges();
     httpMock.expectOne(lessonUrl).flush(lesson);
@@ -127,10 +155,52 @@ describe('LessonDetail', () => {
       exercises: 'Cromáticos',
       observations: '',
     });
-    expect(fixture.nativeElement.textContent).toContain('Salvar diário');
+    expect(fixture.nativeElement.textContent).toContain('Salvar planejamento');
   });
 
-  it('saves diary via PATCH without status', async () => {
+  it('saves planning via PATCH without status', async () => {
+    await setup();
+    fixture.detectChanges();
+    httpMock.expectOne(lessonUrl).flush(lesson);
+    fixture.detectChanges();
+
+    component.startDiaryEdit();
+    component.diaryForm.patchValue({
+      content: 'CAGED — posição 2',
+      exercises: 'Troca entre posições',
+      observations: 'Revisar exercício',
+    });
+    component.saveDiary();
+
+    expect(component.savingDiary()).toBe(true);
+
+    const req = httpMock.expectOne(lessonUrl);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({
+      content: 'CAGED — posição 2',
+      exercises: 'Troca entre posições',
+      observations: 'Revisar exercício',
+    });
+    expect(req.request.body.status).toBeUndefined();
+    expect(req.request.body.scheduleId).toBeUndefined();
+
+    req.flush({
+      ...lesson,
+      content: 'CAGED — posição 2',
+      exercises: 'Troca entre posições',
+      observations: 'Revisar exercício',
+    });
+    fixture.detectChanges();
+
+    expect(component.editingDiary()).toBe(false);
+    expect(component.lesson()?.status).toBe('SCHEDULED');
+    expect(fixture.nativeElement.textContent).toContain('CAGED — posição 2');
+    expect(snackOpen).toHaveBeenCalledWith('Planejamento atualizado.', 'Fechar', {
+      duration: 3000,
+    });
+  });
+
+  it('saves completed diary via PATCH without status', async () => {
     await setup();
     fixture.detectChanges();
     httpMock.expectOne(lessonUrl).flush({ ...lesson, status: 'COMPLETED' });
@@ -144,10 +214,7 @@ describe('LessonDetail', () => {
     });
     component.saveDiary();
 
-    expect(component.savingDiary()).toBe(true);
-
     const req = httpMock.expectOne(lessonUrl);
-    expect(req.request.method).toBe('PATCH');
     expect(req.request.body).toEqual({
       content: 'Escala maior',
       exercises: 'Arpejos',
@@ -164,11 +231,8 @@ describe('LessonDetail', () => {
     });
     fixture.detectChanges();
 
-    expect(component.editingDiary()).toBe(false);
-    expect(component.savingDiary()).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Diário da aula');
     expect(fixture.nativeElement.textContent).toContain('Escala maior');
-    expect(fixture.nativeElement.textContent).toContain('Arpejos');
-    expect(fixture.nativeElement.textContent).toContain('Bom progresso');
     expect(snackOpen).toHaveBeenCalledWith('Diário atualizado.', 'Fechar', { duration: 3000 });
   });
 
@@ -286,5 +350,6 @@ describe('LessonDetail', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Marcar como concluída');
     expect(fixture.nativeElement.textContent).toContain('Editar dados');
     expect(fixture.nativeElement.textContent).toContain('Editar diário');
+    expect(fixture.nativeElement.textContent).toContain('Diário da aula');
   });
 });
